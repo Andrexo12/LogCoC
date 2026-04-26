@@ -1,0 +1,12 @@
+# Entorno virtual
+venv/
+__pycache__/
+*.pyc
+
+# Variables de entorno (SECRETOS)
+.env
+
+# Archivos de base de datos local o temporales
+*.db
+.vscode/
+.idea/
