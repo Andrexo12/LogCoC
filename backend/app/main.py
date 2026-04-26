@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from mysql.connector import Error as MySQLError
-from src.routes.auth import router as auth_router
+from app.routes.auth import router as auth_router
 
 # Configurar logging
 logging.basicConfig(
@@ -30,11 +30,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(status_code=400, content={"error": "Formato de datos incorrecto"})
 # ------------------------------
 
-# Middleware CORS: restringir orígenes en producción usando variables de entorno
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+# Middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=["*"], # En producción, especificar dominios reales
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,50 +10,44 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true, _rememberMe = true, _isLoading = false;
-  final _userController = TextEditingController(),
+  final _emailController = TextEditingController(),
       _passController = TextEditingController();
-  String? _jwtToken;
+  final _authService = AuthService();
 
   @override
   void dispose() {
-    _userController.dispose();
+    _emailController.dispose();
     _passController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
-    setState(() => _isLoading = true);
-    try {
-      final res = await http.post(
-        Uri.parse('http://10.0.2.2:3000/api/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': _userController.text.trim(),
-          'password': _passController.text.trim(),
-        }),
-      );
-      if (!mounted) return;
-      final data = jsonDecode(res.body);
-      if (res.statusCode == 200 && data['token'] != null) {
-        _jwtToken = data['token'];
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Login exitoso')));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${data['message'] ?? res.reasonPhrase}'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Fallo al iniciar sesión: $e')));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      _showMsg('Por favor rellena todos los campos');
+      return;
     }
+
+    setState(() => _isLoading = true);
+    
+    final result = await _authService.login(email, password);
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (result['success']) {
+      _showMsg('¡Bienvenido!');
+      // Aquí podrías navegar a la siguiente pantalla:
+      // Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      _showMsg('Error: ${result['message']}');
+    }
+  }
+
+  void _showMsg(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -117,9 +110,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 32),
                           _buildTextField(
-                            'Usuario',
-                            Icons.person_outline,
-                            _userController,
+                            'Email',
+                            Icons.email_outlined,
+                            _emailController,
                             false,
                           ),
                           const SizedBox(height: 18),
@@ -189,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            onPressed: _isLoading ? null : _login,
+                            onPressed: _isLoading ? null : _handleLogin,
                             child: _isLoading
                                 ? const SizedBox(
                                     height: 20,
