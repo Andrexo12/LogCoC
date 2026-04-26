@@ -35,14 +35,13 @@ Aplicación móvil desarrollada en **Flutter** con un diseño enfocado en la exp
 *   MariaDB o MySQL Server
 
 ### Paso 1: Configuración del Backend
-1. Navega a la carpeta: `cd backend`.
-2. Instala las dependencias: `pip install -r requirements.txt`.
-3. Configura las variables de entorno:
+1. Instala las dependencias: `pip install -r requirements.txt`.
+2. Configura las variables de entorno:
    *   Crea un archivo `.env` basado en `.env.example`.
    *   Define `JWT_SECRET`, `DB_HOST`, `DB_USER`, `DB_PASSWORD` y `DB_NAME`.
-4. Inicializa la base de datos:
+3. Inicializa la base de datos:
    *   Ejecuta el script ubicado en `database_docs/database.sql`.
-5. Inicia el servidor: `uvicorn app.main:app --reload`.
+4. Inicia el servidor: `uvicorn app.main:app --reload`.
 
 ### Paso 2: Configuración del Frontend
 1. Navega a la carpeta: `cd frontend`.
@@ -70,4 +69,4 @@ Aplicación móvil desarrollada en **Flutter** con un diseño enfocado en la exp
 *   **Frontend:** Los widgets reutilizables deben ubicarse en `lib/widgets` para mantener las pantallas (`screens`) limpias.
 
 ---
-*Desarrollado con estándares de código limpio y arquitectura modular.*
+*Desarrollado con estándares de código limpio y arquitectura modular por Andrexo12.*
