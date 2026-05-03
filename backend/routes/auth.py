@@ -4,9 +4,9 @@ from contextlib import contextmanager
 from fastapi import APIRouter, HTTPException, Header
 from mysql.connector import Error as MySQLError
 
-from app.models.user import UserCreate, UserLogin
-from app.services.auth_service import AuthService
-from app.database.db import Database
+from models.user import UserCreate, UserLogin
+from services.auth_service import AuthService
+from database.db import Database
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

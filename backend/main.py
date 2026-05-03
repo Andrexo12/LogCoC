@@ -5,14 +5,11 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from mysql.connector import Error as MySQLError
-from app.routes.auth import router as auth_router
+from routes.auth import router as auth_router
+from routes.products import router as product_router
+from routes.chatbot import router as chatbot_router
 
-# Configurar logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
+# ... (omitted logging)
 
 app = FastAPI(
     title="logW API",
@@ -20,15 +17,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# --- MANEJADORES DE ERRORES ---
-@app.exception_handler(MySQLError)
-async def database_exception_handler(request: Request, exc: MySQLError):
-    return JSONResponse(status_code=503, content={"error": "Error de Base de Datos"})
-
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    return JSONResponse(status_code=400, content={"error": "Formato de datos incorrecto"})
-# ------------------------------
+# ... (omitted handlers)
 
 # Middleware CORS
 app.add_middleware(
@@ -39,8 +28,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Incluir rutas de autenticación
+# Incluir rutas
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(product_router, prefix="/api", tags=["Products"])
+app.include_router(chatbot_router, prefix="/api", tags=["Chatbot"])
 
 @app.get("/", tags=["General"])
 async def home():

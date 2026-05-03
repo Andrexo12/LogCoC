@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../../qr/screens/qr_scanner_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,8 +40,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result['success']) {
       _showMsg('¡Bienvenido!');
-      // Aquí podrías navegar a la siguiente pantalla:
-      // Navigator.pushReplacementNamed(context, '/home');
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const QrScannerScreen()),
+      );
     } else {
       _showMsg('Error: ${result['message']}');
     }
