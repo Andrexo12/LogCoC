@@ -6,9 +6,9 @@ from mysql.connector import Error as MySQLError
 
 from models.user import UserCreate, UserLogin
 from services.auth_service import AuthService
-from database.db import Database
+from database.db_legacy import Database
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
 
 
 @contextmanager

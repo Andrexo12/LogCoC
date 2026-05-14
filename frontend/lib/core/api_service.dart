@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://YOUR_LOCAL_IP:8000'; // Ajustar según entorno
+  static const String baseUrl = 'https://fuzzy-space-capybara-r4r4ggpjwppq3prj5-8000.app.github.dev'; // Ajustar según entorno
 
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();

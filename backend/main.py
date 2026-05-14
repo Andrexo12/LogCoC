@@ -9,7 +9,9 @@ from routes.auth import router as auth_router
 from routes.products import router as product_router
 from routes.chatbot import router as chatbot_router
 
-# ... (omitted logging)
+# Configuración de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="logW API",
