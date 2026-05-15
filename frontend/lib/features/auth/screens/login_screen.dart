@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../../qr/screens/qr_scanner_screen.dart';
+import '../../home/screens/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -43,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const QrScannerScreen()),
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
       );
     } else {
       _showMsg('Error: ${result['message']}');
@@ -206,32 +207,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                           ),
-                          const SizedBox(height: 20),
-                          Center(
-                            child: TextButton(
-                              onPressed: () {},
-                              style: TextButton.styleFrom(
-                                foregroundColor: const Color.fromRGBO(
-                                  255,
-                                  255,
-                                  255,
-                                  0.72,
-                                ),
-                              ),
-                              child: const Text('Forgot Password'),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Center(
-                            child: Text(
-                              "Don't Have an account? Signup",
-                              style: TextStyle(
-                                color: Color.fromRGBO(255, 255, 255, 0.68),
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
                         ],
                       ),
                     ),
@@ -339,3 +314,4 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   );
 }
+

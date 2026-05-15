@@ -1,21 +1,21 @@
 import os
-import google.generativeai as genai
+from groq import Groq
 from sqlalchemy.orm import Session
 from models.product import Product
 from services.product_service import ProductService
 
 class ChatbotService:
     def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            # En un entorno real, esto debería lanzar un error, pero para la tesis usamos un placeholder instructivo
-            print("⚠️ Advertencia: GEMINI_API_KEY no configurada.")
+            print("⚠️ Advertencia: GROQ_API_KEY no configurada.")
         
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-pro')
+        self.client = Groq(api_key=api_key)
+        # Usamos Llama 3.3 70B para una calidad similar o superior a Gemini
+        self.model = "llama-3.3-70b-versatile"
 
     async def get_response(self, user_message: str, product_context: str = "") -> str:
-        prompt = f"""
+        system_prompt = f"""
         Eres un asesor de ventas experto de 'Innova Center', ubicada en el Orinokia Mall. 
         Tu tono es profesional, servicial y persuasivo.
         
@@ -26,13 +26,23 @@ class ChatbotService:
         1. Si hablas de precios, recuerda que Innova Center redondea al 0.50 superior (ej. 10.15 es 10.50).
         2. Si no conoces un detalle técnico específico, invita al cliente a visitar la tienda física.
         3. Mantén las respuestas concisas pero informativas.
-        
-        Mensaje del cliente: {user_message}
         """
         
         try:
-            response = self.model.generate_content(prompt)
-            return response.text
+            chat_completion = self.client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": user_message,
+                    }
+                ],
+                model=self.model,
+            )
+            return chat_completion.choices[0].message.content
         except Exception as e:
             return f"Lo siento, estoy teniendo dificultades técnicas. ¿Podrías visitarnos en el Orinokia Mall? (Error: {str(e)})"
 
