@@ -22,3 +22,8 @@ pubspec.lock
 # Logs
 *.log
 backend/app/*.log
+
+# Docker
+docker-compose.yml
+db_data/
+

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../../qr/screens/qr_scanner_screen.dart';
 import '../../home/screens/dashboard_screen.dart';
+import '../../admin/screens/admin_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,9 +43,16 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result['success']) {
       _showMsg('¡Bienvenido!');
       if (!mounted) return;
+      
+      final String role = result['role'] ?? 'scanner';
+      
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        MaterialPageRoute(
+          builder: (context) => role == 'admin' 
+              ? const AdminDashboard() 
+              : const DashboardScreen(),
+        ),
       );
     } else {
       _showMsg('Error: ${result['message']}');

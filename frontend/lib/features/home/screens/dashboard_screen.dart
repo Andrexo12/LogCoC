@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../qr/screens/qr_scanner_screen.dart';
-import '../../chatbot/screens/chat_screen.dart';
+import 'package:logw_front/features/admin/screens/admin_dashboard.dart';
+import 'package:logw_front/features/catalog/screens/catalog_screen.dart';
+import 'package:logw_front/features/chatbot/screens/chat_screen.dart';
+import 'package:logw_front/features/qr/screens/qr_scanner_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -13,82 +15,14 @@ class DashboardScreen extends StatelessWidget {
         children: [
           _bg(),
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 40),
                   _header(),
                   const SizedBox(height: 40),
-                  const Text(
-                    'Panel de Vendedor',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '¿Qué deseas hacer hoy?',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  Expanded(
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      children: [
-                        _menuCard(
-                          context,
-                          'Escanear QR',
-                          Icons.qr_code_scanner_rounded,
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const QrScannerScreen(),
-                            ),
-                          ),
-                        ),
-                        _menuCard(
-                          context,
-                          'Asistente IA',
-                          Icons.psychology_rounded,
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ChatScreen(),
-                            ),
-                          ),
-                        ),
-                        _menuCard(
-                          context,
-                          'Inventario',
-                          Icons.inventory_2_rounded,
-                          () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Próximamente...')),
-                            );
-                          },
-                        ),
-                        _menuCard(
-                          context,
-                          'Mi Perfil',
-                          Icons.person_rounded,
-                          () {
-                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Próximamente...')),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
+                  _grid(context),
                 ],
               ),
             ),
@@ -99,53 +33,87 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _header() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Hola, Vendedor',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              'Innova Center - Orinokia',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white24),
+        Text(
+          'Innova Center',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 18,
+            letterSpacing: 1.2,
           ),
-          child: const CircleAvatar(
-            backgroundColor: Colors.white12,
-            child: Icon(Icons.person, color: Colors.white),
+        ),
+        const Text(
+          'LogCoC Dashboard',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],
     );
   }
 
-  Widget _menuCard(BuildContext context, String title, IconData icon, VoidCallback onTap) {
+  Widget _grid(BuildContext context) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 20,
+      mainAxisSpacing: 20,
+      children: [
+        _card(
+          context,
+          'Escanear QR',
+          Icons.qr_code_scanner,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+          ),
+        ),
+        _card(
+          context,
+          'Catálogo',
+          Icons.inventory_2_outlined,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CatalogScreen()),
+          ),
+        ),
+        _card(
+          context,
+          'Chatbot AI',
+          Icons.assistant_outlined,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChatScreen()),
+          ),
+        ),
+        _card(
+          context,
+          'Panel Admin',
+          Icons.admin_panel_settings_outlined,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminDashboard()),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _card(BuildContext context, String title, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: Colors.white.withOpacity(0.1),
-            width: 1,
+            color: Colors.white.withOpacity(0.2),
+            width: 1.5,
           ),
         ),
         child: ClipRRect(

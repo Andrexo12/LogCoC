@@ -12,6 +12,8 @@ class Product(Base):
     price = Column(Float, nullable=False)
     stock = Column(Integer, default=0)
     category = Column(String(100), nullable=True)
+    product_type = Column(String(100), nullable=True) # linea blanca, gris, electro
+    is_ar_visible = Column(Integer, default=1) # 1 visible, 0 oculto
 
 class ProductSchema(BaseModel):
     id: int
@@ -19,9 +21,10 @@ class ProductSchema(BaseModel):
     name: str
     description: str | None
     price: float
-    rounded_price: float
     stock: int
     category: str | None
+    product_type: str | None
+    is_ar_visible: int
 
     class Config:
         from_attributes = True

@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 class UserBase(BaseModel):
     email: EmailStr
+    role: str = "scanner"  # 'admin' o 'scanner'
 
     model_config = {
         "from_attributes": True,
@@ -10,9 +11,9 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8)
 
-class UserLogin(UserBase):
+class UserLogin(BaseModel):
+    email: EmailStr
     password: str
 
 class UserResponse(UserBase):
     id: int
-    # password no está aquí por seguridad

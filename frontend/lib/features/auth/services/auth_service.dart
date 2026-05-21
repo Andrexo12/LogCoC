@@ -19,8 +19,13 @@ class AuthService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        await _saveToken(data['access_token']);
-        return {'success': true, 'token': data['access_token']};
+        final token = data['access_token'];
+        final user = data['user'] ?? {};
+        final role = user['role'] ?? 'scanner';
+        final userEmail = user['email'] ?? email;
+        
+        await _saveAuthData(token, role, userEmail);
+        return {'success': true, 'token': token, 'role': role};
       } else {
         return {'success': false, 'message': data['detail'] ?? 'Error desconocido'};
       }
@@ -29,9 +34,16 @@ class AuthService {
     }
   }
 
-  Future<void> _saveToken(String token) async {
+  Future<void> _saveAuthData(String token, String role, String email) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', token);
+    await prefs.setString('user_role', role);
+    await prefs.setString('user_email', email);
+  }
+
+  Future<String?> getRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_role');
   }
 
   Future<String?> getToken() async {
@@ -42,5 +54,7 @@ class AuthService {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
+    await prefs.remove('user_role');
+    await prefs.remove('user_email');
   }
 }

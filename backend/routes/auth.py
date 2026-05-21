@@ -35,8 +35,8 @@ def register(user_data: UserCreate):
     with get_db() as (conn, cursor):
         try:
             cursor.execute(
-                "INSERT INTO users (email, password_hash) VALUES (%s, %s)",
-                (user_data.email, hashed_pwd),
+                "INSERT INTO users (email, password_hash, role) VALUES (%s, %s, %s)",
+                (user_data.email, hashed_pwd, user_data.role),
             )
         except MySQLError as err:
             if getattr(err, "errno", None) == 1062:
@@ -49,14 +49,24 @@ def register(user_data: UserCreate):
 def login(credentials: UserLogin):
     with get_db() as (_, cursor):
         cursor.execute(
-            "SELECT email, password_hash FROM users WHERE email = %s",
+            "SELECT email, password_hash, role FROM users WHERE email = %s",
             (credentials.email,),
         )
         user = cursor.fetchone()
     if not user or not AuthService.verify_password(credentials.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
-    token = AuthService.create_access_token(data={"sub": user["email"]})
-    return {"access_token": token, "token_type": "bearer"}
+    
+    token_data = {"sub": user["email"], "role": user["role"]}
+    token = AuthService.create_access_token(data=token_data)
+    
+    return {
+        "access_token": token, 
+        "token_type": "bearer",
+        "user": {
+            "email": user["email"],
+            "role": user["role"]
+        }
+    }
 
 
 @router.post("/forgot-password")
