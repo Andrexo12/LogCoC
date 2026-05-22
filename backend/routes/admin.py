@@ -35,15 +35,30 @@ def toggle_ar_setting(section_name: str, is_enabled: bool):
 def add_ai_training(data: Dict[str, str]):
     db_legacy = Database()
     conn = db_legacy.connect()
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO ai_training (question, answer, category) VALUES (%s, %s, %s)",
-        (data["question"], data["answer"], data.get("category", "general"))
-    )
+    cursor = conn.cursor(dictionary=True)
+    category = data.get("category", "general")
+    if category == "general_context":
+        cursor.execute("SELECT id FROM ai_training WHERE category = 'general_context'")
+        row = cursor.fetchone()
+        if row:
+            cursor.execute(
+                "UPDATE ai_training SET answer = %s, question = %s WHERE id = %s",
+                (data["answer"], data["question"], row["id"])
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO ai_training (question, answer, category) VALUES (%s, %s, %s)",
+                (data["question"], data["answer"], "general_context")
+            )
+    else:
+        cursor.execute(
+            "INSERT INTO ai_training (question, answer, category) VALUES (%s, %s, %s)",
+            (data["question"], data["answer"], category)
+        )
     conn.commit()
     cursor.close()
     db_legacy.close()
-    return {"message": "AI training data added"}
+    return {"message": "AI training data added/updated"}
 
 @router.get("/ai-training")
 def get_ai_training():
@@ -55,3 +70,14 @@ def get_ai_training():
     cursor.close()
     db_legacy.close()
     return training_data
+
+@router.delete("/ai-training/{item_id}")
+def delete_ai_training(item_id: int):
+    db_legacy = Database()
+    conn = db_legacy.connect()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM ai_training WHERE id = %s", (item_id,))
+    conn.commit()
+    cursor.close()
+    db_legacy.close()
+    return {"message": "AI training data deleted"}
