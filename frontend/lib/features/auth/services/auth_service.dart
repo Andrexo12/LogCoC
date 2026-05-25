@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/api_service.dart';
 
 class AuthService {
-  static const String baseUrl = 'https://fuzzy-space-capybara-r4r4ggpjwppq3prj5-8000.app.github.dev';
+  static String get baseUrl => ApiService.baseUrl;
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {

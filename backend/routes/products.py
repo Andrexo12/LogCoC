@@ -34,3 +34,10 @@ def create_product(product_data: dict, db: Session = Depends(get_db)):
 def update_product(product_id: int, product_data: dict, db: Session = Depends(get_db)):
     # TODO: Agregar verificación de rol admin aquí
     return ProductService.update_product(db, product_id, product_data)
+
+@router.delete("/{product_id}")
+def delete_product(product_id: int, db: Session = Depends(get_db)):
+    success = ProductService.delete_product(db, product_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    return {"message": "Producto eliminado con éxito"}

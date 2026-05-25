@@ -2,7 +2,7 @@
 
 # Ejecutar el Backend
 run-back:
-	cd backend && uvicorn app.main:app --reload
+	cd backend && uvicorn main:app --reload
 
 # Ejecutar el Frontend
 run-front:

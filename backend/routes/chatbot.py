@@ -3,35 +3,29 @@ from sqlalchemy.orm import Session
 from database.db import get_db
 from services.chatbot_service import ChatbotService
 from services.product_service import ProductService
+from models.admin import AITraining
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
-bot_service = ChatbotService()
 
 class ChatRequest(BaseModel):
     message: str
     qr_id: str | None = None
 
-from database.db_legacy import Database
-
 @router.post("/ask")
 async def ask_bot(request: ChatRequest, db: Session = Depends(get_db)):
+    bot_service = ChatbotService()
     # 1. Obtener datos de entrenamiento de la base de datos (FAQs y Contexto General)
-    db_legacy = Database()
-    conn = db_legacy.connect()
+    training_rows = db.query(AITraining).all()
     faqs = []
     general_context = ""
-    if conn:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT question, answer, category FROM ai_training")
-        rows = cursor.fetchall()
-        for r in rows:
-            if r.get('category') == 'general_context':
-                general_context = r['answer']
-            else:
-                faqs.append(f"Q: {r['question']} A: {r['answer']}")
-        cursor.close()
-        db_legacy.close()
+    for r in training_rows:
+        if r.category == 'general_context':
+            general_context = r.answer
+        elif r.category == 'campaign_percentage':
+            continue # Opcional: manejar porcentaje aparte si se desea
+        else:
+            faqs.append(f"Q: {r.question} A: {r.answer}")
 
     training_context = "\n".join(faqs)
 
@@ -65,3 +59,4 @@ async def ask_bot(request: ChatRequest, db: Session = Depends(get_db)):
         training_data=training_context
     )
     return {"reply": response}
+

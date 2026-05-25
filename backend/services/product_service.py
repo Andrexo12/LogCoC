@@ -4,6 +4,11 @@ from models.product import Product
 
 class ProductService:
     @staticmethod
+    def apply_rounding(price: float) -> float:
+        """Aplica la regla de redondeo al 0.50 superior."""
+        return math.ceil(price * 2) / 2
+
+    @staticmethod
     def get_product_by_qr(db: Session, qr_id: str):
         return db.query(Product).filter(Product.qr_id == qr_id).first()
 
@@ -35,3 +40,12 @@ class ProductService:
             db.commit()
             db.refresh(product)
         return product
+
+    @staticmethod
+    def delete_product(db: Session, product_id: int):
+        product = db.query(Product).filter(Product.id == product_id).first()
+        if product:
+            db.delete(product)
+            db.commit()
+            return True
+        return False

@@ -1,83 +1,65 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database.db_legacy import Database
 from database.db import get_db
+from models.admin import ARSetting, AITraining
 from typing import List, Dict
 
 router = APIRouter(prefix="/admin", tags=["Admin Settings"])
 
 @router.get("/ar-settings")
-def get_ar_settings():
-    db_legacy = Database()
-    conn = db_legacy.connect()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM ar_settings")
-    settings = cursor.fetchall()
-    cursor.close()
-    db_legacy.close()
-    return settings
+def get_ar_settings(db: Session = Depends(get_db)):
+    return db.query(ARSetting).all()
 
 @router.post("/ar-settings/toggle")
-def toggle_ar_setting(section_name: str, is_enabled: bool):
-    db_legacy = Database()
-    conn = db_legacy.connect()
-    cursor = conn.cursor()
-    cursor.execute(
-        "UPDATE ar_settings SET is_enabled = %s WHERE section_name = %s",
-        (1 if is_enabled else 0, section_name)
-    )
-    conn.commit()
-    cursor.close()
-    db_legacy.close()
+def toggle_ar_setting(section_name: str, is_enabled: bool, db: Session = Depends(get_db)):
+    setting = db.query(ARSetting).filter(ARSetting.section_name == section_name).first()
+    if not setting:
+        raise HTTPException(status_code=404, detail="Configuración no encontrada")
+    
+    setting.is_enabled = 1 if is_enabled else 0
+    db.commit()
     return {"message": f"Setting {section_name} updated"}
 
 @router.post("/ai-training")
-def add_ai_training(data: Dict[str, str]):
-    db_legacy = Database()
-    conn = db_legacy.connect()
-    cursor = conn.cursor(dictionary=True)
+def add_ai_training(data: Dict[str, str], db: Session = Depends(get_db)):
     category = data.get("category", "general")
+    question = data.get("question", "")
+    answer = data.get("answer", "")
+
     if category == "general_context":
-        cursor.execute("SELECT id FROM ai_training WHERE category = 'general_context'")
-        row = cursor.fetchone()
-        if row:
-            cursor.execute(
-                "UPDATE ai_training SET answer = %s, question = %s WHERE id = %s",
-                (data["answer"], data["question"], row["id"])
-            )
+        item = db.query(AITraining).filter(AITraining.category == "general_context").first()
+        if item:
+            item.answer = answer
+            item.question = question
         else:
-            cursor.execute(
-                "INSERT INTO ai_training (question, answer, category) VALUES (%s, %s, %s)",
-                (data["question"], data["answer"], "general_context")
-            )
+            item = AITraining(question=question, answer=answer, category="general_context")
+            db.add(item)
+    elif category == "campaign_percentage":
+        item = db.query(AITraining).filter(AITraining.category == "campaign_percentage").first()
+        if item:
+            item.answer = answer
+            item.question = question
+        else:
+            item = AITraining(question=question, answer=answer, category="campaign_percentage")
+            db.add(item)
     else:
-        cursor.execute(
-            "INSERT INTO ai_training (question, answer, category) VALUES (%s, %s, %s)",
-            (data["question"], data["answer"], category)
-        )
-    conn.commit()
-    cursor.close()
-    db_legacy.close()
-    return {"message": "AI training data added/updated"}
+        item = AITraining(question=question, answer=answer, category=category)
+        db.add(item)
+    
+    db.commit()
+    return {"message": "AI training data added/updated", "success": True}
 
 @router.get("/ai-training")
-def get_ai_training():
-    db_legacy = Database()
-    conn = db_legacy.connect()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM ai_training ORDER BY created_at DESC")
-    training_data = cursor.fetchall()
-    cursor.close()
-    db_legacy.close()
-    return training_data
+def get_ai_training(db: Session = Depends(get_db)):
+    return db.query(AITraining).order_by(AITraining.created_at.desc()).all()
 
 @router.delete("/ai-training/{item_id}")
-def delete_ai_training(item_id: int):
-    db_legacy = Database()
-    conn = db_legacy.connect()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM ai_training WHERE id = %s", (item_id,))
-    conn.commit()
-    cursor.close()
-    db_legacy.close()
+def delete_ai_training(item_id: int, db: Session = Depends(get_db)):
+    item = db.query(AITraining).filter(AITraining.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+    
+    db.delete(item)
+    db.commit()
     return {"message": "AI training data deleted"}
+

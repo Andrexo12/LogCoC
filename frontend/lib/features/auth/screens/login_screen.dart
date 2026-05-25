@@ -1,4 +1,5 @@
 import 'dart:ui';
+import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../../qr/screens/qr_scanner_screen.dart';
@@ -6,7 +7,8 @@ import '../../home/screens/dashboard_screen.dart';
 import '../../admin/screens/admin_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final bool isFromAdmin;
+  const LoginScreen({super.key, this.isFromAdmin = false});
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -45,15 +47,23 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       
       final String role = result['role'] ?? 'scanner';
+      print('DEBUG LOGIN: Role returned: $role, isFromAdmin: ${widget.isFromAdmin}');
       
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => role == 'admin' 
-              ? const AdminDashboard() 
-              : const DashboardScreen(),
-        ),
-      );
+      // Si el rol es admin, SIEMPRE va al AdminDashboard
+      // Si venía de la ruta /admin (isFromAdmin), también va al AdminDashboard (para que lo bloquee el propio AdminDashboard si no es admin)
+      if (role == 'admin' || widget.isFromAdmin) {
+        print('DEBUG LOGIN: Redirecting to AdminDashboard');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminDashboard()),
+        );
+      } else {
+        print('DEBUG LOGIN: Redirecting to DashboardScreen');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      }
     } else {
       _showMsg('Error: ${result['message']}');
     }
@@ -93,8 +103,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(32),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                  child: GlassEffect(
+                    sigmaX: 18,
+                    sigmaY: 18,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 28,

@@ -13,7 +13,13 @@ class Product(Base):
     stock = Column(Integer, default=0)
     category = Column(String(100), nullable=True)
     product_type = Column(String(100), nullable=True) # linea blanca, gris, electro
+    image_url = Column(Text, nullable=True)
     is_ar_visible = Column(Integer, default=1) # 1 visible, 0 oculto
+
+    @property
+    def rounded_price(self) -> float:
+        import math
+        return math.ceil(self.price * 2) / 2
 
 class ProductSchema(BaseModel):
     id: int
@@ -21,9 +27,11 @@ class ProductSchema(BaseModel):
     name: str
     description: str | None
     price: float
+    rounded_price: float
     stock: int
     category: str | None
     product_type: str | None
+    image_url: str | None = None
     is_ar_visible: int
 
     class Config:

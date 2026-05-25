@@ -9,6 +9,7 @@ from routes.auth import router as auth_router
 from routes.products import router as product_router
 from routes.chatbot import router as chatbot_router
 from routes.admin import router as admin_router
+from routes.import_products import router as import_router
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
@@ -33,6 +34,7 @@ app.add_middleware(
 
 # Incluir rutas
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(import_router, prefix="/api", tags=["Products Import"])
 app.include_router(product_router, prefix="/api", tags=["Products"])
 app.include_router(chatbot_router, prefix="/api", tags=["Chatbot"])
 app.include_router(admin_router, prefix="/api", tags=["Admin"])

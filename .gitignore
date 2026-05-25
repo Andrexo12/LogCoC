@@ -27,3 +27,13 @@ backend/app/*.log
 docker-compose.yml
 db_data/
 
+# Agent CLI & Artifacts
+.agents/
+.antigravitycli/
+skills-lock.json
+implementation_plan.md
+task.md
+walkthrough.md
+analysis_results.md
+
+
