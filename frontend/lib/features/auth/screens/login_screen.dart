@@ -1,8 +1,6 @@
-import 'dart:ui';
 import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import '../../qr/screens/qr_scanner_screen.dart';
 import '../../home/screens/dashboard_screen.dart';
 import '../../admin/screens/admin_dashboard.dart';
 
@@ -116,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           const SizedBox(height: 12),
                           const Text(
-                            'Login',
+                            'Iniciar Sesión',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 42,
@@ -125,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            'WELCOME BACK PLEASE LOGIN TO YOUR ACCOUNT',
+                            'BIENVENIDO DE NUEVO, INICIA SESIÓN EN TU CUENTA',
                             style: TextStyle(
                               color: Color.fromRGBO(255, 255, 255, 0.72),
                               fontSize: 12,
@@ -183,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(width: 12),
                               const Text(
-                                'Remember Me',
+                                'Recordarme',
                                 style: TextStyle(
                                   color: Color.fromRGBO(255, 255, 255, 0.87),
                                   fontSize: 14,

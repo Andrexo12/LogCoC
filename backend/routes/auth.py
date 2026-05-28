@@ -78,6 +78,7 @@ def get_current_user(authorization: str = Header(None)):
         
     return {
         "email": payload.get("sub"),
+        "role": payload.get("role"),
         "rol": payload.get("role"),
         "status": "verificado"
     }

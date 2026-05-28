@@ -1,4 +1,3 @@
-import 'dart:ui';
 import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import '../../auth/services/auth_service.dart';
@@ -215,17 +214,4 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _bg() => Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0B1222),
-              Color(0xFF131D31),
-              Color(0xFF1B2A47),
-            ],
-          ),
-        ),
-      );
 }

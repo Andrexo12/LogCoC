@@ -1,11 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/auth/services/auth_service.dart';
-import 'features/auth/screens/login_screen.dart';
-import 'features/admin/screens/admin_dashboard.dart';
 import 'features/home/screens/dashboard_screen.dart';
-import 'features/products/screens/product_detail_screen.dart';
-import 'features/catalog/screens/catalog_screen.dart';
-import 'features/chatbot/screens/chat_screen.dart';
 import 'core/utils/file_picker_stub.dart'
     if (dart.library.html) 'core/utils/file_picker_web_helper.dart';
 

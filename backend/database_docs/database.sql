@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS products (
     stock INT DEFAULT 0,
     category VARCHAR(100),
     product_type VARCHAR(100),
+    image_url TEXT,
     is_ar_visible TINYINT(1) DEFAULT 1
 );
 

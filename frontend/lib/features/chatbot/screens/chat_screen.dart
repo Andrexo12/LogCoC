@@ -1,4 +1,3 @@
-import 'dart:ui';
 import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import '../../../core/api_service.dart';
@@ -167,6 +166,7 @@ class _ChatScreenState extends State<ChatScreen> {
             width: 1,
           ),
         ),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.76),
         child: ClipRRect(
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
@@ -186,7 +186,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
         ),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.76),
       ),
     );
   }

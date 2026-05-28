@@ -13,11 +13,13 @@ CREATE TABLE IF NOT EXISTS products (
     stock INT DEFAULT 0,
     category VARCHAR(100),
     product_type VARCHAR(100),
+    image_url TEXT,
     is_ar_visible TINYINT(1) DEFAULT 1
 );
 
 -- Si la tabla ya existe, agregar los campos faltantes:
 -- ALTER TABLE products ADD COLUMN product_type VARCHAR(100);
+-- ALTER TABLE products ADD COLUMN image_url TEXT;
 -- ALTER TABLE products ADD COLUMN is_ar_visible TINYINT(1) DEFAULT 1;
 
 -- Tabla para configuración de visibilidad AR (Checkboxes del Admin)

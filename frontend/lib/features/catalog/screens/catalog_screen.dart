@@ -1,4 +1,3 @@
-import 'dart:ui';
 import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,7 +18,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
   String searchQuery = '';
   List<dynamic> _products = [];
   bool _isLoading = true;
-  String? _error;
 
   final List<String> _categories = ['Todos', 'Linea Blanca', 'Linea Gris', 'Electrodomésticos'];
 
@@ -40,7 +38,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
   Future<void> _loadProducts() async {
     setState(() {
       _isLoading = true;
-      _error = null;
     });
 
     try {
@@ -54,7 +51,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Error al cargar productos';
           _isLoading = false;
         });
       }
@@ -327,7 +323,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
   Widget _productCard(Map<String, dynamic> prod) {
     final name = prod['name'] ?? 'Producto';
     final category = prod['category'] ?? 'General';
-    final productType = prod['product_type'] ?? 'Electro';
     final double price = (prod['price'] is num) ? (prod['price'] as num).toDouble() : 0.0;
     final double roundedPrice = (prod['rounded_price'] is num) 
         ? (prod['rounded_price'] as num).toDouble() 

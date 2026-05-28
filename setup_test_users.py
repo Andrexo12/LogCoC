@@ -10,7 +10,7 @@ from models.user import User
 
 def setup_users():
     users_to_create = [
-        {"email": "test@frontend.com", "password": "123456", "role": "admin"},
+        {"email": "test@test.com", "password": "123456", "role": "admin"},
         {"email": "user@test.com", "password": "user_password", "role": "scanner"}
     ]
     

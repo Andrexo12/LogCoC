@@ -1,4 +1,3 @@
-import 'dart:ui';
 import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -340,7 +339,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                 ),
                                 Switch(
                                   value: isArVisible,
-                                  activeColor: Colors.indigoAccent,
+                                  activeThumbColor: Colors.indigoAccent,
                                   inactiveThumbColor: Colors.white30,
                                   inactiveTrackColor: Colors.white12,
                                   onChanged: (bool value) {
@@ -730,18 +729,4 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
       ],
     );
   }
-
-  Widget _bg() => Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0B1222),
-              Color(0xFF131D31),
-              Color(0xFF1B2A47),
-            ],
-          ),
-        ),
-      );
 }

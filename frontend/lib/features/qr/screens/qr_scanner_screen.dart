@@ -99,7 +99,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   const Text(
-                                    'Escáner no disponible',
+                                    'Acceso a la cámara denegado',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
@@ -108,9 +108,12 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   const Text(
-                                    'Esto ocurre usualmente en navegadores web bajo HTTP normal (requiere HTTPS) o si los permisos de la cámara están bloqueados por el navegador.',
+                                    'El navegador ha bloqueado la cámara. Para solucionarlo:\n\n'
+                                    '1. Toca el ícono del candado o la cámara en la barra de direcciones.\n'
+                                    '2. Cambia el permiso a "Permitir" o activa el interruptor.\n'
+                                    '3. Recarga la página para volver a intentar.',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                                    style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(

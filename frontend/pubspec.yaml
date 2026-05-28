@@ -37,6 +37,7 @@ dependencies:
   mobile_scanner: ^5.2.3
   file_picker: ^8.1.2
 
+  http_parser: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

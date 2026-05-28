@@ -20,8 +20,14 @@ class ApiService {
       return '$scheme://$backendHost';
     }
 
+    // If accessing via any numerical IP (local network IP), connect to that same IP on port 8000
+    final ipRegExp = RegExp(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$');
+    if (ipRegExp.hasMatch(host)) {
+      return '$scheme://$host:8000';
+    }
+
     // Default fallback
-    return 'https://fuzzy-space-capybara-r4r4ggpjwppq3prj5-8000.app.github.dev';
+    return 'http://192.168.1.130:8000';
   }
 
   Future<Map<String, dynamic>> importProductsFile(List<int> fileBytes, String filename) async {

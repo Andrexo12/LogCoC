@@ -1,4 +1,3 @@
-import 'dart:ui';
 import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -335,6 +334,29 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (_generatedLink.contains('localhost') || _generatedLink.contains('127.0.0.1')) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 20),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Aviso: Estás usando localhost. Para escanear desde tu iPhone, abre esta página en tu PC usando la IP de tu red (ej. http://192.168.1.XX:5000) para que el QR apunte correctamente.',
+                                    style: TextStyle(color: Colors.amberAccent, fontSize: 10, height: 1.3),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 24),
                         
                         // QR Image Render

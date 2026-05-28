@@ -1,11 +1,8 @@
-import 'dart:ui';
 import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
-import 'package:logw_front/features/admin/screens/admin_dashboard.dart';
 import 'package:logw_front/features/catalog/screens/catalog_screen.dart';
 import 'package:logw_front/features/chatbot/screens/chat_screen.dart';
 import 'package:logw_front/features/qr/screens/qr_scanner_screen.dart';
-import 'package:logw_front/features/auth/services/auth_service.dart';
 import 'package:logw_front/features/auth/screens/login_screen.dart';
 
 class DashboardScreen extends StatelessWidget {

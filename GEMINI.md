@@ -19,7 +19,14 @@ El proyecto es un sistema de gestión y autenticación con un Backend en **FastA
 ### Backend (Python)
 ```bash
 cd backend
-uvicorn main:app --host 0.0.0.0 --port 8000
+# Para desarrollo
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
+# Migraciones (Alembic)
+# Generar una nueva migración autodetectando cambios en modelos
+python -m alembic revision --autogenerate -m "descripcion"
+# Aplicar las migraciones a la base de datos
+python -m alembic upgrade head
 ```
 
 ### Frontend (Flutter Web)
