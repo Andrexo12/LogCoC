@@ -1,21 +1,19 @@
 import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
-import 'package:logw_front/features/catalog/screens/catalog_screen.dart';
-import 'package:logw_front/features/chatbot/screens/chat_screen.dart';
-import 'package:logw_front/features/qr/screens/qr_scanner_screen.dart';
-import 'package:logw_front/features/auth/screens/login_screen.dart';
+import '../../auth/services/auth_service.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   Future<void> _handleAdminPanelTap(BuildContext context) async {
-    // Siempre llevamos al LoginScreen para que el usuario se autentique como admin
-    // La pantalla de Login ya tiene la lógica para redirigir al AdminDashboard si el rol es admin
+    final role = await AuthService().getRole();
+    final token = await AuthService().getToken();
     if (context.mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen(isFromAdmin: true)),
-      );
+      if (token != null && role == 'admin') {
+        Navigator.pushNamed(context, '/admin');
+      } else {
+        Navigator.pushNamed(context, '/admin-login');
+      }
     }
   }
 
@@ -100,10 +98,7 @@ class DashboardScreen extends StatelessWidget {
           'Consulta detalles del producto instantáneamente',
           Icons.qr_code_scanner_rounded,
           Colors.cyanAccent,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const QrScannerScreen()),
-          ),
+          () => Navigator.pushNamed(context, '/qr-scanner'),
         ),
         _card(
           context,
@@ -111,10 +106,7 @@ class DashboardScreen extends StatelessWidget {
           'Explora productos por categoría y marca',
           Icons.inventory_2_outlined,
           Colors.orangeAccent,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CatalogScreen()),
-          ),
+          () => Navigator.pushNamed(context, '/catalog'),
         ),
         _card(
           context,
@@ -122,10 +114,7 @@ class DashboardScreen extends StatelessWidget {
           'Resuelve dudas de garantías y promociones',
           Icons.assistant_outlined,
           Colors.pinkAccent,
-          () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ChatScreen()),
-          ),
+          () => Navigator.pushNamed(context, '/chatbot'),
         ),
         _card(
           context,

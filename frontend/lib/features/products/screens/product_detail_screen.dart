@@ -2,7 +2,6 @@ import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/api_service.dart';
-import '../../chatbot/screens/chat_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String qrId;
@@ -113,7 +112,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/');
+            }
+          },
         ),
         flexibleSpace: ClipRect(
           child: GlassEffect(
@@ -148,14 +153,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               margin: const EdgeInsets.only(bottom: 16),
               child: FloatingActionButton.extended(
                 onPressed: () {
-                  Navigator.push(
+                  Navigator.pushNamed(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        productContextId: widget.qrId,
-                        productName: _product!['name'] ?? 'Producto',
-                      ),
-                    ),
+                    '/chatbot',
+                    arguments: {
+                      'qrId': widget.qrId,
+                      'name': _product!['name'] ?? 'Producto',
+                    },
                   );
                 },
                 backgroundColor: Colors.white.withOpacity(0.12),
@@ -210,7 +214,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    } else {
+                      Navigator.pushReplacementNamed(context, '/');
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: const Color(0xFF0B1222),
@@ -252,22 +262,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           children: [
             Center(
               child: Container(
-                width: 200,
-                height: 200,
-                padding: const EdgeInsets.all(4),
+                width: 220,
+                height: 220,
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.06),
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(28),
                   border: Border.all(
                     color: Colors.white.withOpacity(0.2),
                     width: 1.5,
                   ),
                 ),
                 child: (_product!['image_url'] != null && _product!['image_url'].toString().isNotEmpty)
-                    ? ClipOval(
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
                         child: Image.network(
                           _product!['image_url'],
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) => const Icon(
                             Icons.inventory_2_outlined,
                             size: 72,

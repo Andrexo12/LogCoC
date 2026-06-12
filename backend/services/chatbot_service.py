@@ -10,10 +10,8 @@ class ChatbotService:
         load_dotenv(override=True)
         
         self.groq_key = os.getenv("GROQ_API_KEY")
-        self.gemini_key = os.getenv("GEMINI_API_KEY")
         
         self.groq_valid = self._is_valid_key(self.groq_key)
-        self.gemini_valid = self._is_valid_key(self.gemini_key)
         
         self.client = None
         if self.groq_valid:
@@ -31,7 +29,7 @@ class ChatbotService:
         key_stripped = key.strip()
         if not key_stripped:
             return False
-        placeholder_terms = ["tu_groq_key", "tu_google_ai_key", "aqui", "placeholder", "your_api_key"]
+        placeholder_terms = ["tu_groq_key", "aqui", "placeholder", "your_api_key"]
         key_lower = key_stripped.lower()
         return not any(term in key_lower for term in placeholder_terms)
 
@@ -44,7 +42,7 @@ class ChatbotService:
         training_data: str = ""
     ) -> str:
         # Si no hay llaves válidas configuradas, usar el mock-fallback inteligente
-        if not self.groq_valid and not self.gemini_valid:
+        if not self.groq_valid:
             return self._get_mocked_fallback_response(user_message, product_context, catalog_context)
             
         system_prompt = f"""
@@ -67,7 +65,7 @@ class ChatbotService:
         1. Si el cliente pregunta sobre precios de productos específicos del catálogo o del producto actual, recuerda aplicar la regla de redondeo de Innova Center: redondea al 0.50 superior (ej. 10.15 se convierte en 10.50, 15.00 queda en 15.00, 12.60 se convierte en 13.00, etc.). Presenta siempre el precio redondeado de manera persuasiva.
         2. Basa tus respuestas estrictamente en el Catálogo de Productos y en el Contexto del Negocio proporcionados arriba. No inventes productos ni stock que no estén explícitamente listados.
         3. Si te preguntan si un producto está disponible, revisa el catálogo. Si tiene Stock > 0, confirma la disponibilidad. Si Stock es 0 o no está en el catálogo, indica amablemente que no está en stock actualmente pero que pueden visitarnos para ver alternativas.
-        4. Si no conoces un detalle técnico o respuesta a una pregunta, invita cordialmente al cliente a visitar la tienda física en el Orinokia Mall.
+        4. Si no conoces un detail técnico o respuesta a una pregunta, invita cordialmente al cliente a visitar la tienda física en el Orinokia Mall.
         5. Mantén las respuestas concisas pero informativas y profesionales.
         """
         
@@ -83,22 +81,8 @@ class ChatbotService:
                 )
                 return chat_completion.choices[0].message.content
             except Exception as e:
-                print(f"Groq Chat failed: {e}. Trying Gemini fallback...")
-                
-        # Intentar con Gemini
-        if self.gemini_valid:
-            try:
-                import google.generativeai as genai
-                genai.configure(api_key=self.gemini_key)
-                model = genai.GenerativeModel("gemini-1.5-flash")
-                response = model.generate_content(
-                    f"System Instruction: {system_prompt}\n\nUser Query: {user_message}"
-                )
-                return response.text
-            except Exception as gemini_err:
-                print(f"Gemini fallback failed: {gemini_err}")
-                
-        # Si fallan ambos servicios pero están configurados, o como último recurso
+                print(f"Groq Chat failed: {e}.")
+                 
         return self._get_mocked_fallback_response(user_message, product_context, catalog_context)
 
     def _get_mocked_fallback_response(self, user_message: str, product_context: str, catalog_context: str) -> str:
@@ -130,7 +114,7 @@ class ChatbotService:
                 f"Actualmente contamos con **{stock}** unidades en stock físico listo para entrega inmediata.\n\n"
                 f"Detalles del equipo: {desc or 'Garantía oficial de 1 año.'}\n\n"
                 f"¿Deseas que te reservemos uno para retirarlo en nuestra tienda de Orinokia Mall o tienes alguna duda adicional?\n\n"
-                f"*(Nota técnica: El Asesor de IA está operando en Modo Simulado de contingencia ya que no se ha configurado una API Key de Groq o Gemini en `backend/.env`)*"
+                f"*(Nota técnica: El Asesor de IA está operando en Modo Simulado de contingencia ya que no se ha configurado una API Key de Groq en `backend/.env`)*"
             )
 
         # Buscar en el catálogo local si pregunta por un producto
@@ -149,7 +133,7 @@ class ChatbotService:
                     f"{results_str}\n\n"
                     f"Recuerda que a los precios de lista les aplicamos el redondeo del 0.50 superior al facturar. "
                     f"¿Te interesa alguno en particular?\n\n"
-                    f"*(Nota técnica: El Asesor de IA está operando en Modo Simulado de contingencia ya que no se ha configurado una API Key de Groq o Gemini en `backend/.env`)*"
+                    f"*(Nota técnica: El Asesor de IA está operando en Modo Simulado de contingencia ya que no se ha configurado una API Key de Groq en `backend/.env`)*"
                 )
                 
         # Respuesta general de bienvenida
@@ -158,7 +142,7 @@ class ChatbotService:
             "Soy tu asistente virtual y puedo ayudarte con detalles del catálogo, consultas de stock, precios y garantías.\n\n"
             "Por favor escanea el código QR de cualquier producto o visita la sección de Catálogo para ver lo que tenemos disponible. "
             "Si tienes dudas sobre las garantías de la tienda o métodos de pago, puedes preguntarme con total libertad.\n\n"
-            "*(Nota de desarrollo: Por favor configura tu `GROQ_API_KEY` o `GEMINI_API_KEY` en el archivo `backend/.env` para activar las respuestas completas impulsadas por Inteligencia Artificial)*"
+            "*(Nota de desarrollo: Por favor configura tu `GROQ_API_KEY` en el archivo `backend/.env` para activar las respuestas completas impulsadas por Inteligencia Artificial)*"
         )
 
     @staticmethod

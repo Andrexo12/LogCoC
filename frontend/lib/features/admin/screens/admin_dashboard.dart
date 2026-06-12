@@ -1,11 +1,6 @@
 import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import '../../auth/services/auth_service.dart';
-import '../../auth/screens/login_screen.dart';
-import 'product_management_screen.dart';
-import 'ar_settings_screen.dart';
-import 'ai_training_screen.dart';
-import 'qr_generator_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -13,9 +8,9 @@ class AdminDashboard extends StatelessWidget {
   Future<void> _handleLogout(BuildContext context) async {
     await AuthService().logout();
     if (context.mounted) {
-      Navigator.pushAndRemoveUntil(
+      Navigator.pushNamedAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        '/login',
         (route) => false,
       );
     }
@@ -38,7 +33,13 @@ class AdminDashboard extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/');
+            }
+          },
         ),
         actions: [
           IconButton(
@@ -102,7 +103,7 @@ class AdminDashboard extends StatelessWidget {
                       'Gestionar stock y precios',
                       Icons.inventory_2_outlined,
                       Colors.blueAccent,
-                      const ProductManagementScreen(),
+                      '/admin/products',
                     ),
                     _buildAdminCard(
                       context,
@@ -110,7 +111,7 @@ class AdminDashboard extends StatelessWidget {
                       'Generar códigos para productos',
                       Icons.qr_code_2_rounded,
                       Colors.tealAccent,
-                      const QrGeneratorScreen(),
+                      '/admin/qr-generator',
                     ),
                     _buildAdminCard(
                       context,
@@ -118,7 +119,7 @@ class AdminDashboard extends StatelessWidget {
                       'Configurar visualización 3D',
                       Icons.view_in_ar_rounded,
                       Colors.purpleAccent,
-                      const ARSettingsScreen(),
+                      '/admin/ar-settings',
                     ),
                     _buildAdminCard(
                       context,
@@ -126,7 +127,7 @@ class AdminDashboard extends StatelessWidget {
                       'Promociones y campañas',
                       Icons.psychology_outlined,
                       Colors.orangeAccent,
-                      const AITrainingScreen(),
+                      '/admin/ai-training',
                     ),
                     _buildAdminCard(
                       context,
@@ -152,13 +153,13 @@ class AdminDashboard extends StatelessWidget {
     String subtitle,
     IconData icon,
     Color accentColor,
-    Widget? screen,
+    String? routeName,
   ) {
-    final bool isEnabled = screen != null;
+    final bool isEnabled = routeName != null;
 
     return GestureDetector(
       onTap: isEnabled
-          ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen))
+          ? () => Navigator.pushNamed(context, routeName)
           : () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Esta función estará disponible próximamente')),

@@ -15,8 +15,10 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
   List<dynamic> _products = [];
   bool _isLoading = true;
   bool _isImporting = false;
+  bool _searchImages = true;
   String searchQuery = '';
   String? _error;
+  final Set<int> _selectedProductIds = {};
 
   @override
   void initState() {
@@ -28,6 +30,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _selectedProductIds.clear();
     });
     try {
       final products = await _apiService.getProducts();
@@ -45,6 +48,101 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         });
       }
     }
+  }
+
+  Future<void> _showImportConfirmationDialog() async {
+    bool localSearchImages = _searchImages;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF131D31),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: Colors.white.withOpacity(0.1), width: 1.2),
+              ),
+              title: Row(
+                children: [
+                  const Icon(Icons.upload_file_rounded, color: Colors.tealAccent),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Importar Productos',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9), 
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Sube un archivo Excel (.xlsx, .xls), factura en PDF o imagen para importar productos automáticamente.',
+                    style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Buscar imágenes',
+                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Busca automáticamente imágenes de productos en internet (DuckDuckGo) en segundo plano.',
+                              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10, height: 1.2),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: localSearchImages,
+                        activeColor: Colors.tealAccent,
+                        onChanged: (val) {
+                          setDialogState(() {
+                            localSearchImages = val;
+                          });
+                          setState(() {
+                            _searchImages = val;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.tealAccent,
+                    foregroundColor: const Color(0xFF0B1222),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _importProducts();
+                  },
+                  child: const Text('Seleccionar Archivo', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _importProducts() async {
@@ -81,7 +179,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                   SizedBox(height: 16),
                   Text(
-                    'Procesando archivo con IA...',
+                    'Procesando archivo...',
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -90,7 +188,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           ),
         );
 
-        final importResult = await _apiService.importProductsFile(fileBytes, filename);
+        final importResult = await _apiService.importProductsFile(
+          fileBytes, 
+          filename,
+          searchImages: _searchImages,
+        );
         
         if (mounted) {
           Navigator.pop(context); // Cerrar modal de carga
@@ -135,6 +237,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     final priceController = TextEditingController(text: product != null ? product['price'].toString() : '');
     final stockController = TextEditingController(text: product != null ? product['stock'].toString() : '');
     final categoryController = TextEditingController(text: product?['category'] ?? '');
+    final imageUrlController = TextEditingController(text: product?['image_url'] ?? '');
     
     String selectedProductType = product?['product_type'] ?? 'Linea Blanca';
     bool isArVisible = (product?['is_ar_visible'] ?? 1) == 1;
@@ -276,6 +379,79 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                             ),
                             const SizedBox(height: 16),
 
+                            // Image URL & Picker
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Expanded(
+                                  child: _buildFormField(
+                                    controller: imageUrlController,
+                                    label: 'URL de la Imagen (dejar vacío para buscar automáticamente)',
+                                    hint: 'Ej: https://ejemplo.com/imagen.jpg',
+                                    icon: Icons.image_outlined,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                StatefulBuilder(
+                                  builder: (context, setStateBtn) {
+                                    bool uploading = false;
+                                    return SizedBox(
+                                      height: 54,
+                                      child: ElevatedButton.icon(
+                                        onPressed: uploading ? null : () async {
+                                          try {
+                                            final result = await FilePicker.platform.pickFiles(
+                                              type: FileType.image,
+                                              withData: true,
+                                            );
+                                            if (result != null && result.files.single.bytes != null) {
+                                              setStateBtn(() => uploading = true);
+                                              
+                                              final uploadRes = await _apiService.uploadProductImage(
+                                                result.files.single.bytes!,
+                                                result.files.single.name,
+                                              );
+                                              
+                                              if (uploadRes['success']) {
+                                                final String newUrl = uploadRes['image_url'];
+                                                imageUrlController.text = newUrl;
+                                                _showToast('¡Imagen subida con éxito!');
+                                              } else {
+                                                _showErrorToast(uploadRes['message']);
+                                              }
+                                            }
+                                          } catch (e) {
+                                            _showErrorToast('Error al seleccionar imagen: $e');
+                                          } finally {
+                                            setStateBtn(() => uploading = false);
+                                          }
+                                        },
+                                        icon: uploading 
+                                          ? const SizedBox(
+                                              width: 18, 
+                                              height: 18, 
+                                              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white70))
+                                            )
+                                          : const Icon(Icons.upload_file_rounded),
+                                        label: Text(uploading ? 'Subiendo...' : 'Subir'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white.withOpacity(0.08),
+                                          foregroundColor: Colors.white,
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(14),
+                                            side: BorderSide(color: Colors.white.withOpacity(0.15)),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
                             // Product Type Selector (Linea Blanca/Gris/Electro)
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,6 +540,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                     'stock': int.parse(stockController.text.trim()),
                                     'category': categoryController.text.trim(),
                                     'product_type': selectedProductType,
+                                    'image_url': imageUrlController.text.trim(),
                                     'is_ar_visible': isArVisible ? 1 : 0,
                                   };
 
@@ -452,6 +629,44 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     );
   }
 
+  void _confirmBulkDelete() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF151F36),
+          title: const Text('Eliminar Productos Seleccionados', style: TextStyle(color: Colors.white)),
+          content: Text('¿Está seguro de que desea eliminar los ${_selectedProductIds.length} productos seleccionados? Esta acción no se puede deshacer.',
+              style: const TextStyle(color: Colors.white70)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context); // Close dialog
+                _showLoadingOverlay();
+                
+                final result = await _apiService.bulkDeleteProducts(_selectedProductIds.toList());
+                
+                _hideLoadingOverlay();
+                if (result['success']) {
+                  _showToast('Productos eliminados correctamente');
+                  _loadProducts();
+                } else {
+                  _showErrorToast(result['message']);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+              child: const Text('Eliminar'),
+            )
+          ],
+        );
+      },
+    );
+  }
+
   void _showLoadingOverlay() {
     showDialog(
       context: context,
@@ -492,13 +707,35 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/admin');
+            }
+          },
         ),
         actions: [
+          if (_selectedProductIds.isNotEmpty) ...[
+            IconButton(
+              icon: const Icon(Icons.clear_all_rounded, color: Colors.white70),
+              tooltip: 'Deseleccionar todo',
+              onPressed: () {
+                setState(() {
+                  _selectedProductIds.clear();
+                });
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_sweep_rounded, color: Color(0xFFEF4444)),
+              tooltip: 'Eliminar seleccionados (${_selectedProductIds.length})',
+              onPressed: _confirmBulkDelete,
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.upload_file_rounded, color: Colors.tealAccent),
             tooltip: 'Importar Excel/Factura',
-            onPressed: _isImporting ? null : _importProducts,
+            onPressed: _isImporting ? null : _showImportConfirmationDialog,
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
@@ -627,6 +864,30 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
               sigmaY: 8,
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                leading: Checkbox(
+                  value: _selectedProductIds.contains(prod['id']),
+                  activeColor: Colors.indigoAccent,
+                  checkColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withOpacity(0.4)),
+                  onChanged: (bool? val) {
+                    setState(() {
+                      if (val == true) {
+                        _selectedProductIds.add(prod['id']);
+                      } else {
+                        _selectedProductIds.remove(prod['id']);
+                      }
+                    });
+                  },
+                ),
+                onTap: () {
+                  setState(() {
+                    if (_selectedProductIds.contains(prod['id'])) {
+                      _selectedProductIds.remove(prod['id']);
+                    } else {
+                      _selectedProductIds.add(prod['id']);
+                    }
+                  });
+                },
                 title: Row(
                   children: [
                     Expanded(

@@ -51,16 +51,10 @@ class _LoginScreenState extends State<LoginScreen> {
       // Si venía de la ruta /admin (isFromAdmin), también va al AdminDashboard (para que lo bloquee el propio AdminDashboard si no es admin)
       if (role == 'admin' || widget.isFromAdmin) {
         print('DEBUG LOGIN: Redirecting to AdminDashboard');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminDashboard()),
-        );
+        Navigator.pushReplacementNamed(context, '/admin');
       } else {
         print('DEBUG LOGIN: Redirecting to DashboardScreen');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        );
+        Navigator.pushReplacementNamed(context, '/');
       }
     } else {
       _showMsg('Error: ${result['message']}');
@@ -78,6 +72,29 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Stack(
         children: [
           _bg(),
+          Positioned(
+            top: 16,
+            left: 16,
+            child: SafeArea(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withOpacity(0.15)),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                  onPressed: () {
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    } else {
+                      Navigator.pushReplacementNamed(context, '/');
+                    }
+                  },
+                ),
+              ),
+            ),
+          ),
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),

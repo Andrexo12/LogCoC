@@ -1,5 +1,9 @@
 .PHONY: run-back run-front install-all test-back
 
+# Ejecutar todo (Backend + Frontend)
+run:
+	powershell -ExecutionPolicy Bypass -File run_app.ps1
+
 # Ejecutar el Backend
 run-back:
 	cd backend && uvicorn main:app --reload

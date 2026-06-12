@@ -31,8 +31,19 @@
 
   <title>logw_front</title>
   <link rel="manifest" href="manifest.json">
+  
+  <!-- Deshabilitar caché en desarrollo -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
 </head>
 <body>
-  <script src="main.dart.js?v=2" type="application/javascript"></script>
+  <!-- Agregamos un timestamp para forzar la recarga del JS -->
+  <script>
+    var script = document.createElement('script');
+    script.src = "main.dart.js?v=" + new Date().getTime();
+    script.type = "application/javascript";
+    document.body.appendChild(script);
+  </script>
 </body>
 </html>

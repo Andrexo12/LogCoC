@@ -11,6 +11,9 @@ from routes.chatbot import router as chatbot_router
 from routes.admin import router as admin_router
 from routes.import_products import router as import_router
 
+from fastapi.staticfiles import StaticFiles
+import os
+
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,6 +23,10 @@ app = FastAPI(
     description="API for logW application",
     version="1.0.0"
 )
+
+# Asegurar directorios estáticos
+os.makedirs("static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ... (omitted handlers)
 

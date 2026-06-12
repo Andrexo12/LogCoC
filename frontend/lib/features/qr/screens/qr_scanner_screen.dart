@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../../products/screens/product_detail_screen.dart';
 
 class QrScannerScreen extends StatefulWidget {
   const QrScannerScreen({super.key});
@@ -28,11 +27,9 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     if (_isScanCompleted) return;
     setState(() => _isScanCompleted = true);
     
-    Navigator.push(
+    Navigator.pushNamed(
       context,
-      MaterialPageRoute(
-        builder: (context) => ProductDetailScreen(qrId: code),
-      ),
+      '/product/$code',
     ).then((_) {
       setState(() => _isScanCompleted = false);
     });
@@ -69,6 +66,16 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/');
+            }
+          },
+        ),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

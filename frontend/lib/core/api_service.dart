@@ -11,7 +11,7 @@ class ApiService {
 
     // Check localhost / IP
     if (host == 'localhost' || host == '127.0.0.1') {
-      return '$scheme://$host:8000';
+      return '$scheme://127.0.0.1:8000';
     }
 
     // Dynamic Codespaces port replacing (-5000 to -8000)
@@ -30,10 +30,12 @@ class ApiService {
     return 'http://192.168.1.130:8000';
   }
 
-  Future<Map<String, dynamic>> importProductsFile(List<int> fileBytes, String filename) async {
+  Future<Map<String, dynamic>> importProductsFile(List<int> fileBytes, String filename, {bool searchImages = true}) async {
     final token = await _getToken();
     try {
-      final uri = Uri.parse('$baseUrl/api/products/import');
+      final uri = Uri.parse('$baseUrl/api/products/import').replace(
+        queryParameters: {'search_images': searchImages.toString()},
+      );
       final request = http.MultipartRequest('POST', uri);
       
       if (token != null) {
@@ -327,6 +329,88 @@ class ApiService {
 
       if (response.statusCode == 200) {
         return {'success': true, 'message': 'Eliminado con éxito'};
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': error['detail'] ?? 'Error del servidor: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> uploadProductImage(List<int> fileBytes, String filename) async {
+    final token = await _getToken();
+    try {
+      final uri = Uri.parse('$baseUrl/api/products/upload-image');
+      final request = http.MultipartRequest('POST', uri);
+      
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      
+      MediaType? contentType;
+      final ext = filename.split('.').last.toLowerCase();
+      if (ext == 'png') {
+        contentType = MediaType('image', 'png');
+      } else if (ext == 'jpg' || ext == 'jpeg') {
+        contentType = MediaType('image', 'jpeg');
+      } else if (ext == 'webp') {
+        contentType = MediaType('image', 'webp');
+      } else if (ext == 'gif') {
+        contentType = MediaType('image', 'gif');
+      }
+
+      final multipartFile = http.MultipartFile.fromBytes(
+        'file',
+        fileBytes,
+        filename: filename,
+        contentType: contentType,
+      );
+      request.files.add(multipartFile);
+      
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'image_url': jsonDecode(response.body)['image_url'],
+        };
+      } else {
+        Map<String, dynamic> error = {};
+        try {
+          error = jsonDecode(response.body);
+        } catch (_) {}
+        return {
+          'success': false,
+          'message': error['detail'] ?? 'Error al subir la imagen',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> bulkDeleteProducts(List<int> productIds) async {
+    final token = await _getToken();
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/products/bulk-delete'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'ids': productIds}),
+      );
+      
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': 'Eliminados con éxito'};
       } else {
         final error = jsonDecode(response.body);
         return {

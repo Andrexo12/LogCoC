@@ -6,40 +6,412 @@ import logging
 from typing import List, Dict, Any
 import openpyxl
 from groq import Groq
-import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
 class ExtractorService:
     @staticmethod
-    def search_image(product_name: str) -> str | None:
-        """Busca una imagen del producto en la web usando DuckDuckGo."""
+    def _clean_product_name_for_search(name: str) -> str:
+        import re
+        query = name
+        # Limpiar volumen y tamaño (ej: 100ml, 100 ml, 3.4 oz, 3.4oz)
+        query = re.sub(r'\b\d+\s*(?:ml|oz)\b', '', query, flags=re.IGNORECASE).strip()
+        # Limpiar concentraciones y tipos comunes (ej: eau de parfum, edp, etc.)
+        query = re.sub(r'\b(?:eau de parfum|eau de toilette|edp|edt|parfum|fragrance|eau de cologne|cologne|eau|toilette)\b', '', query, flags=re.IGNORECASE).strip()
+        # Limpiar símbolos como guiones y espacios múltiples
+        query = re.sub(r'[-\s_]+', ' ', query).strip()
+        return query
+
+    @staticmethod
+    def _clean_brand(query: str) -> str:
+        # Remover marcas comunes que suelen activar widgets de compras de Bing
+        for brand in ["samsung galaxy", "samsung", "apple", "xiaomi", "redmi", "huawei", "motorola"]:
+            query_lower = query.lower()
+            if query_lower.startswith(brand):
+                query = query[len(brand):].strip()
+            elif brand in query_lower:
+                import re
+                query = re.sub(r'\b' + re.escape(brand) + r'\b', '', query, flags=re.IGNORECASE).strip()
+        import re
+        query = re.sub(r'\s+', ' ', query)
+        return query
+
+    @staticmethod
+    def _score_image_url(url: str, product_name: str) -> int:
+        import re
+        url_lower = url.lower()
+        
+        # Limpiar el nombre para buscar palabras clave significativas
+        cleaned_name = ExtractorService._clean_product_name_for_search(product_name)
+        
+        stopwords = {
+            "de", "del", "el", "la", "los", "las", "un", "una", "y", "o",
+            "in", "on", "at", "for", "with", "by", "of", "to", "and", "the", "a", "an",
+            "edp", "edt", "ml", "oz", "parfum", "toilette", "eau", "cologne", "fragrance"
+        }
+        product_words = [
+            w.lower() for w in cleaned_name.split()
+            if (len(w) >= 2 or w.isdigit()) and w.lower() not in stopwords
+        ]
+        
+        score = 0
+        
+        # Si la marca (primera palabra relevante) está en la URL, subir puntaje
+        brand = product_words[0] if product_words else ""
+        if brand and brand in url_lower:
+            score += 15
+            
+        # 1. Dominios preferidos de e-commerce y catálogos oficiales (Puntaje positivo alto)
+        preferred_domains = [
+            "fragrantica.com", "fimgs.net", "perfume", "fragrance", "belleza", "beauty",
+            "amazon.com", "media-amazon.com", "ssl-images-amazon.com",
+            "kimovil.com", "gsmarena.com", "mlstatic.com", "mercadolibre.com",
+            "shopdunk.com", "apple.com", "samsung.com", "xiaomi.com", "mi.com",
+            "tienda", "store", "comprar", "shop", "catalogo", "catalog", "mercado"
+        ]
+        is_trusted_domain = any(domain in url_lower for domain in preferred_domains)
+        if is_trusted_domain:
+            score += 20
+            
+        # 2. Palabras clave de imágenes limpias de producto
+        clean_keywords = ["png", "transparent", "transparente", "render", "official", "oficial", "stock", "white", "blanco"]
+        if any(kw in url_lower for kw in clean_keywords):
+            score += 5
+            
+        # 3. Contener palabras del nombre del producto (muy importante para evitar comparativas cruzadas)
+        matched_words = 0
+        for word in product_words:
+            if word.isdigit():
+                # Si el término es numérico (ej. "5", "13"), asegurar que no sea parte de otro número más largo en la URL (ej. "0005" o "421219")
+                if re.search(r'(?<!\d)' + re.escape(word) + r'(?!\d)', url_lower):
+                    matched_words += 1
+            else:
+                # Para palabras de texto, basta con que estén presentes en la URL
+                if word in url_lower:
+                    matched_words += 1
+        
+        score += matched_words * 10
+        
+        # Si no contiene ninguna palabra del producto, penalizar fuertemente
+        if matched_words == 0:
+            score -= 40
+            
+        # Evitar imágenes que contengan "default" en el path con números (como miniaturas genéricas de kimovil sin modelo)
+        if "/default/" in url_lower and matched_words == 0:
+            score -= 30
+        
+        # 4. Dominios prohibidos/blacklisted (Puntaje negativo alto)
+        blacklisted = [
+            "dxomark", "youtube", "ytimg", "pinterest", "pinimg", "blogspot", 
+            "wordpress", "tumblr", "facebook", "instagram", "twitter", "tiktok", 
+            "eporner", "porn", "adult", "brasilescola", "uol.com", "cimentart", 
+            "publicdomain", "lalr.co", "metroandalas", "undertec", "computer-bild", 
+            "expertonline", "alamy", "shutterstock", "gettyimages", "stock", 
+            "wikipedia", "wikimedia", "wiki", "biobiochile", "blogs", "news", 
+            "noticias", "articulo", "comparativa", "versus", "vs", "review",
+            "imdb", "mv5b", "pxhere", "vecteezy", "silhouette", "avatar", "profile",
+            "member", "avatar", "flag", "bandera", "escudo", "map", "mapa"
+        ]
+        if any(bad in url_lower for bad in blacklisted):
+            score -= 50
+            
+        # 5. Extensiones preferidas
+        if url_lower.endswith(".png") or "png" in url_lower:
+            score += 2
+            
+        # 6. Evitar cruce de categorías (ej. reloj vs teléfono, auriculares vs teléfono)
+        clash_groups = [
+            # Relojes
+            (["watch", "reloj", "band", "fit", "smartwatch"], 
+             ["phone", "smartphone", "telefono", "movil", "cellphone", "tablet", "laptop", "tv"]),
+            # Teléfonos
+            (["phone", "smartphone", "telefono", "movil", "cellphone", "note"], 
+             ["watch", "reloj", "band", "fit", "smartwatch", "buds", "earbuds", "headphone", "auriculares"])
+        ]
+        
+        product_name_lower = product_name.lower()
+        for keywords, clashes in clash_groups:
+            # Si el nombre del producto contiene palabras clave de este grupo
+            if any(kw in product_name_lower for kw in keywords):
+                # Pero la URL contiene términos chocantes/excluyentes
+                if any(clash in url_lower for clash in clashes):
+                    score -= 35
+                    
+        # 7. Validar números de modelo (ej. si el nombre tiene "13" o "5", la URL debe coincidir con alguno)
+        product_numbers = [w for w in product_words if w.isdigit()]
+        if product_numbers:
+            has_number_match = any(
+                re.search(r'(?<!\d)' + re.escape(num) + r'(?!\d)', url_lower)
+                for num in product_numbers
+            )
+            if not has_number_match:
+                score -= 30
+            
+        return score
+
+    @staticmethod
+    def _search_brave_image(product_name: str) -> str | None:
+        """Busca una imagen de producto en Brave Search usando curl.exe para evitar bloqueos TLS."""
+        import subprocess
+        import urllib.parse
+        import re
+        import html as html_lib
+        
+        # Limpiar consulta para Brave
+        cleaned_query = ExtractorService._clean_product_name_for_search(product_name)
+        logger.info(f"Buscando imagen en Brave Search para: {product_name} (Limpio: {cleaned_query})")
+        encoded_query = urllib.parse.quote(cleaned_query)
+        url = f"https://search.brave.com/images?q={encoded_query}"
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        
         try:
-            from duckduckgo_search import DDGS
-            logger.info(f"Buscando imagen para: {product_name}")
-            with DDGS() as ddgs:
-                results = list(ddgs.images(
-                    keywords=f"{product_name} producto fondo blanco",
-                    region="wt-wt",
-                    safesearch="on",
-                    size="Medium",
-                    type_image="photo"
-                ))
-                if results:
-                    # Retornar la primera imagen encontrada
-                    return results[0].get("image")
+            cmd = ["curl", "-s", "-A", user_agent, url]
+            # Ejecutar curl.exe de forma síncrona con un timeout
+            result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=10)
+            
+            if result.returncode == 0 and result.stdout:
+                html_text = html_lib.unescape(result.stdout)
+                
+                # Encontrar URLs de imágenes en Brave Search
+                img_urls = re.findall(r'\"(https?://[^\"]+?\.(?:jpg|jpeg|png|webp))\"', html_text)
+                filtered_urls = list(set([u for u in img_urls if "brave.com" not in u and "brave-static" not in u]))
+                
+                if not filtered_urls:
+                    return None
+                    
+                scored_images = []
+                for u in filtered_urls:
+                    score = ExtractorService._score_image_url(u, product_name)
+                    scored_images.append((score, u))
+                    
+                scored_images.sort(key=lambda x: x[0], reverse=True)
+                best_score, best_img = scored_images[0]
+                
+                if best_score >= 15:
+                    logger.info(f"Imagen seleccionada en Brave para '{product_name}' (Puntaje={best_score}): {best_img}")
+                    return best_img
+                    
         except Exception as e:
-            logger.error(f"Error buscando imagen para {product_name}: {e}")
+            logger.warning(f"Error consultando Brave Search para '{product_name}': {e}")
         return None
 
     @staticmethod
+    def _search_fragrantica_image(product_name: str) -> str | None:
+        """Busca una imagen de perfume en Fragrantica a través de Brave Search con site:fragrantica.com."""
+        import subprocess
+        import urllib.parse
+        import re
+        import html as html_lib
+        
+        query = ExtractorService._clean_product_name_for_search(product_name)
+        if len(query) < 3:
+            return None
+            
+        search_query = f"{query} site:fragrantica.com"
+        logger.info(f"Buscando imagen en Fragrantica para: {product_name} (Consulta: '{search_query}')")
+        
+        encoded_query = urllib.parse.quote(search_query)
+        url = f"https://search.brave.com/images?q={encoded_query}"
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        
+        try:
+            cmd = ["curl", "-s", "-A", user_agent, url]
+            result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=10)
+            
+            if result.returncode == 0 and result.stdout:
+                html_text = html_lib.unescape(result.stdout)
+                img_urls = re.findall(r'\"(https?://[^\"]+?\.(?:jpg|jpeg|png|webp))\"', html_text)
+                
+                # Filtrar URLs oficiales de Fragrantica (incluyendo fimgs.net)
+                fragrantica_urls = [
+                    u for u in img_urls 
+                    if "fragrantica.com" in u or "fimgs.net" in u
+                ]
+                
+                if fragrantica_urls:
+                    best_img = fragrantica_urls[0]
+                    logger.info(f"Imagen oficial de Fragrantica encontrada: {best_img}")
+                    return best_img
+        except Exception as e:
+            logger.warning(f"Error consultando Fragrantica en Brave para '{product_name}': {e}")
+            
+        return None
+
+    @staticmethod
+    def search_image(product_name: str) -> str | None:
+        """Busca una imagen del producto (primero Fragrantica, luego Brave Search, luego Bing)."""
+        if not product_name or not isinstance(product_name, str):
+            return None
+            
+        name_clean = product_name.strip().lower()
+        if len(name_clean) < 3:
+            logger.warning(f"Nombre de producto demasiado corto para buscar imagen: '{product_name}'")
+            return None
+            
+        # Ignorar términos genéricos y cabeceras comunes de planillas/facturas
+        ignored_terms = {
+            "nombre", "precio", "cantidad", "especificaciones", "total", "subtotal",
+            "factura", "fecha", "código", "codigo", "item", "producto", "product",
+            "price", "quantity", "specs", "stock", "iva", "descuento", "description",
+            "descripción", "unidades", "unidad", "cant.", "detalles", "details",
+            "monto", "valor", "costo", "cost", "total general", "gran total", "general"
+        }
+        if name_clean in ignored_terms:
+            logger.warning(f"Evitando buscar imagen para término genérico/cabecera: '{product_name}'")
+            return None
+            
+        logger.info(f"Iniciando búsqueda de imagen para: {product_name}")
+        
+        # 1. Intentar primero con Fragrantica (específico para perfumes)
+        frag_img = ExtractorService._search_fragrantica_image(product_name)
+        if frag_img:
+            return frag_img
+            
+        # 2. Intentar con Brave Search general (usando curl, alta tasa de éxito y precisión)
+        brave_img = ExtractorService._search_brave_image(product_name)
+        if brave_img:
+            return brave_img
+            
+        # 3. Fallback a Bing recorriendo variaciones usando curl y requiriendo score >= 15
+        import subprocess
+        import re
+        import urllib.parse
+        import html as html_lib
+        
+        logger.warning(f"Brave Search no devolvió imagen apta para '{product_name}'. Usando fallback de Bing...")
+        
+        cleaned = ExtractorService._clean_product_name_for_search(product_name)
+        variations = [
+            cleaned,
+            f"{cleaned} perfume",
+            f"{cleaned} bottle",
+            f"{cleaned} png"
+        ]
+        
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, with Gecko) Chrome/115.0.0.0 Safari/537.36"
+        
+        for var in variations:
+            if not var or var.strip() == "":
+                continue
+            try:
+                encoded_query = urllib.parse.quote(var)
+                url = f"https://www.bing.com/images/search?q={encoded_query}"
+                cmd = ["curl", "-s", "-L", "-A", user_agent, url]
+                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=10)
+                
+                if result.returncode == 0 and result.stdout:
+                    decoded_html = html_lib.unescape(result.stdout)
+                    matches = re.findall(r'"murl"\s*:\s*"([^"]+)"', decoded_html)
+                    
+                    if not matches:
+                        continue
+                        
+                    scored_images = []
+                    for m in matches:
+                        score = ExtractorService._score_image_url(m, product_name)
+                        scored_images.append((score, m))
+                        
+                    scored_images.sort(key=lambda x: x[0], reverse=True)
+                    best_score, best_img = scored_images[0]
+                    
+                    if best_score >= 15:
+                        logger.info(f"Imagen seleccionada en Bing con consulta '{var}' (Puntaje={best_score}): {best_img}")
+                        return best_img
+            except Exception as e:
+                logger.warning(f"Búsqueda en Bing con '{var}' falló: {e}")
+                
+        return None
+
+    @staticmethod
+    def extract_images_from_xlsx(file_bytes: bytes) -> dict:
+        """
+        Parsea un archivo XLSX como ZIP y extrae imágenes incrustadas asociadas a sus filas.
+        Devuelve un diccionario: {fila_index (0-based): (nombre_archivo, bytes_imagen)}
+        """
+        import zipfile
+        import xml.etree.ElementTree as ET
+        import re
+        
+        images_by_row = {}
+        try:
+            with zipfile.ZipFile(io.BytesIO(file_bytes)) as z:
+                # 1. Encontrar relaciones de dibujo
+                drawing_rels = {}
+                for name in z.namelist():
+                    if name.startswith("xl/drawings/_rels/") and name.endswith(".rels"):
+                        try:
+                            xml_content = z.read(name)
+                            root = ET.fromstring(xml_content)
+                            for child in root:
+                                r_id = child.attrib.get("Id")
+                                target = child.attrib.get("Target")
+                                if r_id and target:
+                                    clean_target = target.replace("../", "xl/")
+                                    drawing_rels[r_id] = clean_target
+                        except Exception as e:
+                            logger.warning(f"Error parseando rels de dibujo {name}: {e}")
+
+                # 2. Parsear los dibujos para saber en qué celda/fila está cada imagen
+                for name in z.namelist():
+                    if name.startswith("xl/drawings/") and name.endswith(".xml") and not "_rels" in name:
+                        try:
+                            xml_content = z.read(name)
+                            # Remover namespaces para facilitar la búsqueda con ElementTree
+                            xml_str = re.sub(r' xmlns="[^"]+"', '', xml_content.decode("utf-8", errors="ignore"))
+                            xml_str = re.sub(r'xmlns:\w+="[^"]+"', '', xml_str)
+                            xml_str = re.sub(r'<\w+:', '<', xml_str)
+                            xml_str = re.sub(r'</\w+:', '</', xml_str)
+                            
+                            root = ET.fromstring(xml_str.encode("utf-8"))
+                            anchors = root.findall(".//twoCellAnchor") + root.findall(".//oneCellAnchor")
+                            
+                            for anchor in anchors:
+                                from_elem = anchor.find(".//from")
+                                if from_elem is not None:
+                                    row_elem = from_elem.find("row")
+                                    if row_elem is not None:
+                                        row_idx = int(row_elem.text)
+                                        
+                                        blip = anchor.find(".//blip")
+                                        if blip is not None:
+                                            r_id = None
+                                            for attr, val in blip.attrib.items():
+                                                if attr.endswith("embed"):
+                                                    r_id = val
+                                                    break
+                                                    
+                                            if r_id and r_id in drawing_rels:
+                                                img_path = drawing_rels[r_id]
+                                                try:
+                                                    img_bytes = z.read(img_path)
+                                                    filename = img_path.split("/")[-1]
+                                                    images_by_row[row_idx] = (filename, img_bytes)
+                                                except Exception as e:
+                                                    logger.warning(f"Error al leer bytes de imagen {img_path}: {e}")
+                        except Exception as e:
+                            logger.warning(f"Error parseando archivo de dibujo {name}: {e}")
+                            
+        except Exception as e:
+            logger.warning(f"Error al abrir XLSX como ZIP para extraer imágenes: {e}")
+            
+        return images_by_row
+
+    @staticmethod
     def extract_from_excel(file_bytes: bytes) -> List[Dict[str, Any]]:
-        """Procesa un archivo Excel y devuelve una lista de productos."""
+        """Procesa un archivo Excel y devuelve una lista de productos con sus imágenes asociadas."""
         try:
             wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True)
             sheet = wb.active
             if not sheet:
                 return []
+
+            # Extraer imágenes incrustadas de forma nativa
+            images_by_row = {}
+            try:
+                images_by_row = ExtractorService.extract_images_from_xlsx(file_bytes)
+                logger.info(f"Imágenes extraídas de Excel: {len(images_by_row)}")
+            except Exception as e:
+                logger.warning(f"No se pudieron extraer imágenes del Excel: {e}")
 
             # Leer filas y determinar encabezados
             rows = list(sheet.iter_rows(values_only=True))
@@ -77,7 +449,7 @@ class ExtractorService:
             if specs_idx == -1 and len(headers) > 3: specs_idx = 3
 
             extracted_products = []
-            for row in rows[1:]:
+            for idx, row in enumerate(rows[1:], start=1):
                 # Asegurar que la fila tiene suficientes elementos
                 if name_idx >= len(row) or row[name_idx] is None:
                     continue
@@ -104,11 +476,21 @@ class ExtractorService:
                     except (ValueError, TypeError):
                         pass
 
+                # Mapear imagen asociada a la fila (openpyxl row start=1 coincide con la fila 0-based en drawings)
+                image_filename = None
+                image_bytes = None
+                img_data = images_by_row.get(idx)
+                if img_data:
+                    image_filename, image_bytes = img_data
+                    logger.info(f"Imagen asociada al producto de la fila {idx}: {image_filename}")
+
                 extracted_products.append({
                     "name": name,
                     "specifications": specs,
                     "price": price,
-                    "quantity": qty
+                    "quantity": qty,
+                    "image_filename": image_filename,
+                    "image_bytes": image_bytes
                 })
 
             return extracted_products
@@ -189,58 +571,4 @@ class ExtractorService:
 
         raise last_error or Exception("Todos los modelos de Groq Vision fallaron")
 
-    @staticmethod
-    def extract_with_gemini(file_bytes: bytes, mime_type: str) -> List[Dict[str, Any]]:
-        """Extrae productos usando Google Gemini."""
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("Falta GEMINI_API_KEY en variables de entorno")
 
-        genai.configure(api_key=api_key)
-        
-        models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash"]
-        last_error = None
-
-        prompt = (
-            "Analiza el documento o imagen y extrae la lista de productos. Devuelve únicamente "
-            "un JSON array con objetos que tengan exactamente los campos: name, specifications, price, quantity. "
-            "No incluyas explicaciones ni bloques Markdown, solo el texto JSON puro."
-        )
-
-        for model_name in models_to_try:
-            try:
-                logger.info(f"Intentando Gemini con modelo: {model_name}")
-                model = genai.GenerativeModel(model_name)
-                
-                response = model.generate_content([
-                    prompt,
-                    {
-                        "mime_type": mime_type,
-                        "data": file_bytes
-                    }
-                ])
-
-                text = response.text.strip()
-                
-                # Quitar envoltorios markdown json si los tiene
-                if text.startswith("```json"):
-                    text = text[7:]
-                if text.endswith("```"):
-                    text = text[:-3]
-                text = text.strip()
-
-                parsed = json.loads(text)
-                if isinstance(parsed, list):
-                    return parsed
-                elif isinstance(parsed, dict):
-                    for val in parsed.values():
-                        if isinstance(val, list):
-                            return val
-                    return []
-                return []
-            except Exception as e:
-                logger.warning(f"Fallo Gemini con {model_name}: {str(e)}")
-                last_error = e
-                continue
-
-        raise last_error or Exception("Gemini falló en todos los intentos")

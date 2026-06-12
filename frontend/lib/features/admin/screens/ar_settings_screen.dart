@@ -18,7 +18,25 @@ class _ARSettingsScreenState extends State<ARSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Configuración AR')),
+      appBar: AppBar(
+        title: const Text(
+          'Configuración AR',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF0B1222),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/admin');
+            }
+          },
+        ),
+      ),
       body: ListView(
         children: settings.keys.map((String key) {
           return CheckboxListTile(

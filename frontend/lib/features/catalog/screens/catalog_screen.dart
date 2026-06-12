@@ -2,7 +2,6 @@ import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/api_service.dart';
-import '../../products/screens/product_detail_screen.dart';
 
 class CatalogScreen extends StatefulWidget {
   final String? initialCategory;
@@ -162,7 +161,13 @@ class _CatalogScreenState extends State<CatalogScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/');
+            }
+          },
         ),
         actions: [
           IconButton(
@@ -334,12 +339,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
     return GestureDetector(
       onTap: () {
         if (qrId.isNotEmpty) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProductDetailScreen(qrId: qrId),
-            ),
-          );
+          Navigator.pushNamed(context, '/product/$qrId');
         }
       },
       child: Container(
@@ -365,18 +365,23 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   Expanded(
                     child: Center(
                       child: Container(
-                        padding: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.04),
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.06),
+                            width: 1.0,
+                          ),
                         ),
                         child: (prod['image_url'] != null && prod['image_url'].toString().isNotEmpty)
-                            ? ClipOval(
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
                                 child: Image.network(
                                   prod['image_url'],
                                   width: 80,
                                   height: 80,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.contain,
                                   errorBuilder: (context, error, stackTrace) => const Icon(
                                     Icons.inventory_2_outlined,
                                     size: 38,
