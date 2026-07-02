@@ -13,6 +13,7 @@ class Product(Base):
     stock = Column(Integer, default=0)
     category = Column(String(100), nullable=True)
     product_type = Column(String(100), nullable=True) # linea blanca, gris, electro
+    model = Column(String(100), nullable=True)
     image_url = Column(Text, nullable=True)
     is_ar_visible = Column(Integer, default=1) # 1 visible, 0 oculto
 
@@ -31,6 +32,7 @@ class ProductSchema(BaseModel):
     stock: int
     category: str | None
     product_type: str | None
+    model: str | None = None
     image_url: str | None = None
     is_ar_visible: int
 

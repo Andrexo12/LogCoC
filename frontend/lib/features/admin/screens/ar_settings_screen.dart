@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/api_service.dart';
 
 class ARSettingsScreen extends StatefulWidget {
   const ARSettingsScreen({super.key});
@@ -8,6 +9,8 @@ class ARSettingsScreen extends StatefulWidget {
 }
 
 class _ARSettingsScreenState extends State<ARSettingsScreen> {
+  final ApiService _apiService = ApiService();
+  bool _isLoading = true;
   Map<String, bool> settings = {
     'Precio': true,
     'Descripción': true,
@@ -16,8 +19,68 @@ class _ARSettingsScreenState extends State<ARSettingsScreen> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    _fetchSettings();
+  }
+
+  Future<void> _fetchSettings() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final list = await _apiService.getARSettings();
+    final Map<String, bool> updatedSettings = Map.from(settings);
+    for (var item in list) {
+      if (item is Map) {
+        final name = item['section_name'] as String?;
+        final isEnabled = item['is_enabled'] as int?;
+        if (name != null && isEnabled != null) {
+          updatedSettings[name] = isEnabled == 1;
+        }
+      }
+    }
+    setState(() {
+      settings = updatedSettings;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _onToggleSetting(String key, bool newValue) async {
+    // Optimistic UI update
+    setState(() {
+      settings[key] = newValue;
+    });
+
+    final res = await _apiService.toggleARSetting(key, newValue);
+    if (!res['success']) {
+      // Revert
+      setState(() {
+        settings[key] = !newValue;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al actualizar $key: ${res['message'] ?? 'Desconocido'}'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$key actualizado correctamente'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0B1222),
       appBar: AppBar(
         title: const Text(
           'Configuración AR',
@@ -37,21 +100,33 @@ class _ARSettingsScreenState extends State<ARSettingsScreen> {
           },
         ),
       ),
-      body: ListView(
-        children: settings.keys.map((String key) {
-          return CheckboxListTile(
-            title: Text(key),
-            subtitle: Text('Mostrar $key en la vista AR'),
-            value: settings[key],
-            onChanged: (bool? value) {
-              setState(() {
-                settings[key] = value!;
-              });
-              // TODO: Guardar en backend
-            },
-          );
-        }).toList(),
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.purpleAccent))
+          : ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: settings.keys.map((String key) {
+                return Card(
+                  color: Colors.white.withOpacity(0.05),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: CheckboxListTile(
+                    title: Text(key, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    subtitle: Text('Mostrar $key en la vista AR', style: TextStyle(color: Colors.white.withOpacity(0.6))),
+                    value: settings[key],
+                    activeColor: Colors.purpleAccent,
+                    checkColor: Colors.white,
+                    onChanged: (bool? value) {
+                      if (value != null) {
+                        _onToggleSetting(key, value);
+                      }
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
     );
   }
 }
+

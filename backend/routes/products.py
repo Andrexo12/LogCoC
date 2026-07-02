@@ -5,6 +5,7 @@ from services.product_service import ProductService
 from models.product import ProductSchema
 from typing import List, Optional
 import logging
+from routes.auth import require_role
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +91,8 @@ def get_products(
 @router.post("/upload-image")
 async def upload_product_image(
     request: Request,
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    current_user = Depends(require_role("admin"))
 ):
     """Sube una imagen para un producto y devuelve su URL absoluta en el servidor."""
     filename = file.filename or "imagen.png"
@@ -119,7 +121,8 @@ async def upload_product_image(
 @router.delete("/bulk-delete")
 def bulk_delete_products(
     payload: dict,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("admin"))
 ):
     """Elimina múltiples productos a la vez a partir de sus IDs."""
     ids = payload.get("ids", [])
@@ -150,10 +153,10 @@ def create_product(
     product_data: dict, 
     request: Request, 
     background_tasks: BackgroundTasks = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("admin"))
 ):
     base_url = str(request.base_url)
-    # TODO: Agregar verificación de rol admin aquí
     product = ProductService.create_product(db, product_data)
     
     # Buscar imagen en segundo plano si no se suministró una
@@ -170,10 +173,10 @@ def update_product(
     product_data: dict, 
     request: Request, 
     background_tasks: BackgroundTasks = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("admin"))
 ):
     base_url = str(request.base_url)
-    # TODO: Agregar verificación de rol admin aquí
     product = ProductService.update_product(db, product_id, product_data)
     
     # Buscar imagen en segundo plano si quedó vacía tras la actualización
@@ -185,8 +188,9 @@ def update_product(
     return rewrite_image_url(product_to_dict(product), request)
 
 @router.delete("/{product_id}")
-def delete_product(product_id: int, db: Session = Depends(get_db)):
+def delete_product(product_id: int, db: Session = Depends(get_db), current_user = Depends(require_role("admin"))):
     success = ProductService.delete_product(db, product_id)
     if not success:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return {"message": "Producto eliminado con éxito"}
+

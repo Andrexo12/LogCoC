@@ -50,8 +50,13 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     }
   }
 
-  Future<void> _showImportConfirmationDialog() async {
+  Future<void> _showAddMultipleDialog() async {
     bool localSearchImages = _searchImages;
+    bool containsPrices = false;
+    String selectedCurrency = 'Divisas'; // or 'Bolívares'
+    bool applyDiscount = false;
+    bool _useTextInput = false;
+    TextEditingController _textInputController = TextEditingController();
     await showDialog(
       context: context,
       builder: (context) {
@@ -64,61 +69,181 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 side: BorderSide(color: Colors.white.withOpacity(0.1), width: 1.2),
               ),
               title: Row(
-                children: [
-                  const Icon(Icons.upload_file_rounded, color: Colors.tealAccent),
-                  const SizedBox(width: 10),
+                children: const [
+                  Icon(Icons.upload_file_rounded, color: Colors.tealAccent),
+                  SizedBox(width: 10),
                   Text(
-                    'Importar Productos',
+                    'Agregar varios productos',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9), 
+                      color: Colors.white70,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
                   ),
                 ],
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Sube un archivo Excel (.xlsx, .xls), factura en PDF o imagen para importar productos automáticamente.',
-                    style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Buscar imágenes',
-                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Selecciona un archivo (Excel, PDF, imagen) o ingresa datos manualmente vía texto.',
+                      style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                    ),
+                    const SizedBox(height: 12),
+                    // Switch buscar imágenes
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Buscar imágenes',
+                                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Busca automáticamente imágenes de productos en internet (DuckDuckGo).',
+                                  style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.2),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Busca automáticamente imágenes de productos en internet (DuckDuckGo) en segundo plano.',
-                              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10, height: 1.2),
+                          ),
+                          Switch(
+                            value: localSearchImages,
+                            activeColor: Colors.tealAccent,
+                            onChanged: (val) {
+                              setDialogState(() => localSearchImages = val);
+                              setState(() => _searchImages = val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Contiene precios
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      ),
+                      child: Column(
+                        children: [
+                          CheckboxListTile(
+                            title: const Text('Contiene precios', style: TextStyle(color: Colors.white)),
+                            value: containsPrices,
+                            activeColor: Colors.tealAccent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            onChanged: (val) {
+                              setDialogState(() => containsPrices = val ?? false);
+                            },
+                          ),
+                          if (containsPrices) ...[
+                            const Divider(color: Colors.white12, height: 1),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: Row(
+                                children: [
+                                  const Text('Moneda:', style: TextStyle(color: Colors.white70)),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: DropdownButton<String>(
+                                      value: selectedCurrency,
+                                      dropdownColor: const Color(0xFF131D31),
+                                      isExpanded: true,
+                                      underline: const SizedBox(),
+                                      style: const TextStyle(color: Colors.white),
+                                      items: const [
+                                        DropdownMenuItem(value: 'Divisas', child: Text('Divisas')),
+                                        DropdownMenuItem(value: 'Bolívares', child: Text('Bolívares')),
+                                      ],
+                                      onChanged: (val) {
+                                        setDialogState(() => selectedCurrency = val ?? 'Divisas');
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (selectedCurrency == 'Bolívares') ...[
+                              const Divider(color: Colors.white12, height: 1),
+                              CheckboxListTile(
+                                title: const Text('Aplicar 10% de descuento', style: TextStyle(color: Colors.white)),
+                                value: applyDiscount,
+                                activeColor: Colors.tealAccent,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                onChanged: (val) {
+                                  setDialogState(() => applyDiscount = val ?? false);
+                                },
+                              ),
+                            ],
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Agregar vía texto
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      ),
+                      child: Column(
+                        children: [
+                          CheckboxListTile(
+                            title: const Text('Agregar vía texto', style: TextStyle(color: Colors.white)),
+                            value: _useTextInput,
+                            activeColor: Colors.tealAccent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            onChanged: (val) {
+                              setDialogState(() => _useTextInput = val ?? false);
+                            },
+                          ),
+                          if (_useTextInput) ...[
+                            const Divider(color: Colors.white12, height: 1),
+                            Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: TextField(
+                                controller: _textInputController,
+                                maxLines: 5,
+                                decoration: InputDecoration(
+                                  hintText: 'Ejemplo: nombre1;precio1;stock1;categoria1',
+                                  hintStyle: const TextStyle(color: Colors.white30),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: Colors.tealAccent),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white.withOpacity(0.02),
+                                ),
+                                style: const TextStyle(color: Colors.white),
+                              ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
-                      Switch(
-                        value: localSearchImages,
-                        activeColor: Colors.tealAccent,
-                        onChanged: (val) {
-                          setDialogState(() {
-                            localSearchImages = val;
-                          });
-                          setState(() {
-                            _searchImages = val;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -133,9 +258,22 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   ),
                   onPressed: () {
                     Navigator.pop(context);
-                    _importProducts();
+                    if (_useTextInput) {
+                      _importProductsFromText(
+                        _textInputController.text,
+                        containsPrices: containsPrices,
+                        priceCurrency: selectedCurrency,
+                        applyDiscount: applyDiscount,
+                      );
+                    } else {
+                      _importProducts(
+                        containsPrices: containsPrices,
+                        priceCurrency: selectedCurrency,
+                        applyDiscount: applyDiscount,
+                      );
+                    }
                   },
-                  child: const Text('Seleccionar Archivo', style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text('Continuar', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
             );
@@ -145,7 +283,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     );
   }
 
-  Future<void> _importProducts() async {
+  Future<void> _importProducts({bool containsPrices = false, String priceCurrency = 'Divisas', bool applyDiscount = false}) async {
     try {
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -192,6 +330,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           fileBytes, 
           filename,
           searchImages: _searchImages,
+          containsPrices: containsPrices,
+          priceCurrency: priceCurrency,
+          applyDiscount: applyDiscount,
         );
         
         if (mounted) {
@@ -212,6 +353,59 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         setState(() => _isImporting = false);
       }
       _showErrorToast('Error al seleccionar o subir el archivo: $e');
+    }
+  }
+
+  Future<void> _importProductsFromText(String rawText, {bool containsPrices = false, String priceCurrency = 'Divisas', bool applyDiscount = false}) async {
+    final lines = rawText.split('\n').where((l) => l.trim().isNotEmpty).toList();
+    if (lines.isEmpty) {
+      _showErrorToast('No se ingresó texto para importar');
+      return;
+    }
+    setState(() => _isImporting = true);
+    
+    // Mostrar modal de carga
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Dialog(
+        backgroundColor: Colors.transparent,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+              SizedBox(height: 16),
+              Text(
+                'Analizando texto y guardando...',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final importResult = await _apiService.importProductsText(
+      rawText,
+      searchImages: _searchImages,
+      containsPrices: containsPrices,
+      priceCurrency: priceCurrency,
+      applyDiscount: applyDiscount,
+    );
+    
+    if (mounted) {
+      Navigator.pop(context); // Cerrar modal de carga
+      setState(() => _isImporting = false);
+    }
+
+    if (importResult['success']) {
+      final count = importResult['data']['imported_count'] ?? 0;
+      _showToast('¡Importación completada! Se agregaron $count productos.');
+      _loadProducts();
+    } else {
+      _showErrorToast(importResult['message'] ?? 'Error durante la importación');
     }
   }
 
@@ -238,9 +432,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     final stockController = TextEditingController(text: product != null ? product['stock'].toString() : '');
     final categoryController = TextEditingController(text: product?['category'] ?? '');
     final imageUrlController = TextEditingController(text: product?['image_url'] ?? '');
+    final modelController = TextEditingController(text: product?['model'] ?? '');
     
     String selectedProductType = product?['product_type'] ?? 'Linea Blanca';
     bool isArVisible = (product?['is_ar_visible'] ?? 1) == 1;
+    String priceCurrency = 'Divisas';
 
     showDialog(
       context: context,
@@ -333,12 +529,14 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                             const SizedBox(height: 16),
 
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Price
                                 Expanded(
+                                  flex: 2,
                                   child: _buildFormField(
                                     controller: priceController,
-                                    label: 'Precio (\$)',
+                                    label: 'Precio',
                                     hint: 'Ej: 799.99',
                                     icon: Icons.attach_money_rounded,
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -347,6 +545,40 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                       if (double.tryParse(v) == null) return 'Número inválido';
                                       return null;
                                     },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  flex: 1,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Moneda', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.06),
+                                          borderRadius: BorderRadius.circular(14),
+                                          border: Border.all(color: Colors.white.withOpacity(0.15)),
+                                        ),
+                                        child: DropdownButtonHideUnderline(
+                                          child: DropdownButton<String>(
+                                            value: priceCurrency,
+                                            dropdownColor: const Color(0xFF131D31),
+                                            isExpanded: true,
+                                            style: const TextStyle(color: Colors.white),
+                                            items: const [
+                                              DropdownMenuItem(value: 'Divisas', child: Text('Divisas')),
+                                              DropdownMenuItem(value: 'Bolívares', child: Text('Bs')),
+                                            ],
+                                            onChanged: (val) {
+                                              setDialogState(() => priceCurrency = val ?? 'Divisas');
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -378,6 +610,40 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                               validator: (v) => v!.isEmpty ? 'Requerido' : null,
                             ),
                             const SizedBox(height: 16),
+
+                            // Model
+                            _buildFormField(
+                              controller: modelController,
+                              label: 'Modelo (Recomendado para Línea Blanca)',
+                              hint: 'Ej: WT19B',
+                              icon: Icons.confirmation_number_outlined,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Si estamos editando y no tiene imagen, mostrar advertencia
+                            if (isEditing && (product['image_url'] == null || (product['image_url'] as String).trim().isEmpty)) ...[
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.warning_amber_rounded, color: Colors.amber),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'No se encontró la imagen para este producto. Por favor ingresa una URL o sube una imagen manualmente.',
+                                        style: TextStyle(color: Colors.amber, fontSize: 13, fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
 
                             // Image URL & Picker
                             Row(
@@ -515,7 +781,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                 ),
                                 Switch(
                                   value: isArVisible,
-                                  activeThumbColor: Colors.indigoAccent,
+                                  activeColor: Colors.indigoAccent,
                                   inactiveThumbColor: Colors.white30,
                                   inactiveTrackColor: Colors.white12,
                                   onChanged: (bool value) {
@@ -531,18 +797,37 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                             // Submit Button
                             ElevatedButton(
                               onPressed: () async {
-                                if (formKey.currentState!.validate()) {
+                                  if (formKey.currentState!.validate()) {
                                   final data = {
                                     'qr_id': qrIdController.text.trim(),
                                     'name': nameController.text.trim(),
                                     'description': descriptionController.text.trim(),
-                                    'price': double.parse(priceController.text.trim()),
                                     'stock': int.parse(stockController.text.trim()),
                                     'category': categoryController.text.trim(),
+                                    'model': modelController.text.trim(),
                                     'product_type': selectedProductType,
                                     'image_url': imageUrlController.text.trim(),
                                     'is_ar_visible': isArVisible ? 1 : 0,
                                   };
+                                  
+                                  bool isPerfume = data['name'].toString().toLowerCase().contains('perfume') || data['name'].toString().toLowerCase().contains('fragancia') || data['category'].toString().toLowerCase().contains('perfume');
+                                  double inputPrice = double.parse(priceController.text.trim());
+                                  double dbPrice = inputPrice;
+                                  
+                                  if (isPerfume) {
+                                    if (priceCurrency == 'Divisas') {
+                                      dbPrice = inputPrice * 2;
+                                    } else {
+                                      dbPrice = inputPrice;
+                                    }
+                                  } else {
+                                    if (priceCurrency == 'Bolívares') {
+                                      dbPrice = inputPrice / 1.85;
+                                    } else {
+                                      dbPrice = inputPrice;
+                                    }
+                                  }
+                                  data['price'] = dbPrice;
 
                                   Navigator.pop(context); // Close dialog
                                   _showLoadingOverlay();
@@ -678,7 +963,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
   }
 
   void _hideLoadingOverlay() {
-    Navigator.of(context, rootNavigator: true).pop();
+    final nav = Navigator.of(context, rootNavigator: true);
+    if (nav.canPop()) nav.pop();
   }
 
   void _showToast(String message) {
@@ -690,6 +976,47 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
   void _showErrorToast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+    );
+  }
+
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    IconData? icon,
+    bool enabled = true,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      enabled: enabled,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      validator: validator,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+        prefixIcon: icon != null ? Icon(icon, color: Colors.white54) : null,
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.06),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Colors.tealAccent),
+        ),
+      ),
     );
   }
 
@@ -734,8 +1061,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           ],
           IconButton(
             icon: const Icon(Icons.upload_file_rounded, color: Colors.tealAccent),
-            tooltip: 'Importar Excel/Factura',
-            onPressed: _isImporting ? null : _showImportConfirmationDialog,
+            tooltip: 'agregar varios',
+            onPressed: _isImporting ? null : _showAddMultipleDialog,
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
@@ -849,6 +1176,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         final double price = (prod['price'] is num) ? (prod['price'] as num).toDouble() : 0.0;
         final int stock = (prod['stock'] is num) ? (prod['stock'] as num).toInt() : 0;
         final bool isAr = prod['is_ar_visible'] == 1;
+        final String? imageUrl = prod['image_url'] as String?;
+        final bool hasNoImage = imageUrl == null || imageUrl.trim().isEmpty;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -879,15 +1208,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                     });
                   },
                 ),
-                onTap: () {
-                  setState(() {
-                    if (_selectedProductIds.contains(prod['id'])) {
-                      _selectedProductIds.remove(prod['id']);
-                    } else {
-                      _selectedProductIds.add(prod['id']);
-                    }
-                  });
-                },
+                onTap: () => _showFormDialog(product: prod),
                 title: Row(
                   children: [
                     Expanded(
@@ -896,6 +1217,23 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                     ),
+                    if (hasNoImage)
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.image_not_supported_rounded, color: Colors.amber, size: 10),
+                            SizedBox(width: 4),
+                            Text('SIN IMAGEN', style: TextStyle(color: Colors.amber, fontSize: 9, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
                     if (isAr)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -934,60 +1272,6 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildFormField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    bool enabled = true,
-    int maxLines = 1,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 13),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          enabled: enabled,
-          maxLines: maxLines,
-          keyboardType: keyboardType,
-          style: TextStyle(color: enabled ? Colors.white : Colors.white38),
-          validator: validator,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-            prefixIcon: Icon(icon, color: enabled ? Colors.white54 : Colors.white24, size: 20),
-            filled: true,
-            fillColor: Colors.white.withOpacity(0.06),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Colors.indigoAccent, width: 1.5),
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.05)),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

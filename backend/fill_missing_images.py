@@ -10,12 +10,20 @@ from services.extractor import ExtractorService
 def fill_images():
     print("--- Buscando imágenes automáticas para productos cargados ---")
     
+    from dotenv import load_dotenv
+    load_dotenv()
+    
+    db_host = os.getenv("DB_HOST", "127.0.0.1")
+    db_user = os.getenv("DB_USER", "logw_user")
+    db_password = os.getenv("DB_PASSWORD", "logw_password")
+    db_name = os.getenv("DB_NAME", "logw_db")
+    
     # Conexión local a la base de datos
     conn = mysql.connector.connect(
-        host="127.0.0.1",
-        user="root",
-        password="",
-        database="logw_db"
+        host=db_host,
+        user=db_user,
+        password=db_password,
+        database=db_name
     )
     cur = conn.cursor(dictionary=True)
     

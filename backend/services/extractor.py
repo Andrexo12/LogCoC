@@ -159,6 +159,8 @@ class ExtractorService:
         
         # Limpiar consulta para Brave
         cleaned_query = ExtractorService._clean_product_name_for_search(product_name)
+        if ExtractorService.is_device_or_appliance(product_name):
+            cleaned_query = f"{cleaned_query} official product white background"
         logger.info(f"Buscando imagen en Brave Search para: {product_name} (Limpio: {cleaned_query})")
         encoded_query = urllib.parse.quote(cleaned_query)
         url = f"https://search.brave.com/images?q={encoded_query}"
@@ -190,14 +192,13 @@ class ExtractorService:
                 if best_score >= 15:
                     logger.info(f"Imagen seleccionada en Brave para '{product_name}' (Puntaje={best_score}): {best_img}")
                     return best_img
-                    
         except Exception as e:
             logger.warning(f"Error consultando Brave Search para '{product_name}': {e}")
         return None
 
     @staticmethod
     def _search_fragrantica_image(product_name: str) -> str | None:
-        """Busca una imagen de perfume en Fragrantica a través de Brave Search con site:fragrantica.com."""
+        """Busca una imagen de perfume en Fragrantica (com/es) a través de Yandex Images con site-restriction y fallback."""
         import subprocess
         import urllib.parse
         import re
@@ -207,39 +208,147 @@ class ExtractorService:
         if len(query) < 3:
             return None
             
-        search_query = f"{query} site:fragrantica.com"
-        logger.info(f"Buscando imagen en Fragrantica para: {product_name} (Consulta: '{search_query}')")
+        # Variaciones de búsqueda en Yandex restringiendo por sitio para forzar imágenes de la base de datos de perfumes
+        queries = [
+            f"{query} site:fragrantica.com",
+            f"{query} site:fragrantica.es",
+            f"{query} fragrantica"
+        ]
         
-        encoded_query = urllib.parse.quote(search_query)
-        url = f"https://search.brave.com/images?q={encoded_query}"
         user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
         
-        try:
-            cmd = ["curl", "-s", "-A", user_agent, url]
-            result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=10)
-            
-            if result.returncode == 0 and result.stdout:
-                html_text = html_lib.unescape(result.stdout)
-                img_urls = re.findall(r'\"(https?://[^\"]+?\.(?:jpg|jpeg|png|webp))\"', html_text)
+        for idx, q_text in enumerate(queries):
+            logger.info(f"Buscando perfume en Fragrantica (Yandex) para: {product_name} (Consulta {idx+1}: '{q_text}')")
+            try:
+                encoded_query = urllib.parse.quote(q_text)
+                url = f"https://yandex.com/images/search?text={encoded_query}"
+                cmd = ["curl", "-s", "-L", "-A", user_agent, url]
+                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=10)
                 
-                # Filtrar URLs oficiales de Fragrantica (incluyendo fimgs.net)
-                fragrantica_urls = [
-                    u for u in img_urls 
-                    if "fragrantica.com" in u or "fimgs.net" in u
-                ]
+                if result.returncode == 0 and result.stdout:
+                    decoded_html = html_lib.unescape(result.stdout)
+                    img_urls = re.findall(r'(https?://[^\s\"\'\<\>\\#]+?\.(?:jpg|jpeg|png|webp))', decoded_html)
+                    
+                    # Filtrar y priorizar URLs oficiales de Fragrantica (com, es y fimgs.net)
+                    valid_urls = []
+                    for u in img_urls:
+                        u_lower = u.lower()
+                        
+                        # Exclusión estricta de notas/ingredientes (sastojci), avatares, noticias (vijesti/vijestiru/news), pirámides/cards y fotos amateur (photogram)
+                        if any(bad in u_lower for bad in ["/sastojci/", "/avatari/", "/news/", "/vijesti", "/vijestiru/", "/perfume-social-cards/", "/photogram/", "/himg/"]):
+                            continue
+                            
+                        if "fragrantica.com" in u_lower or "fragrantica.es" in u_lower or "fimgs.net" in u_lower:
+                            # Priorizar frascos oficiales de la base de datos
+                            priority = 0
+                            if "/perfume-thumbs/" in u_lower:
+                                priority = 100
+                            elif "/perfume/" in u_lower:
+                                priority = 90
+                            elif "/secundar/" in u_lower:
+                                priority = 70
+                            else:
+                                priority = 10
+                            valid_urls.append((priority, u))
+                    
+                    if valid_urls:
+                        # Ordenar por prioridad descendente
+                        valid_urls.sort(key=lambda x: x[0], reverse=True)
+                        best_img = valid_urls[0][1]
+                        logger.info(f"Imagen de frasco Fragrantica seleccionada (Consulta {idx+1}, Prioridad={valid_urls[0][0]}): {best_img}")
+                        return best_img
+            except Exception as e:
+                logger.warning(f"Error consultando Fragrantica en Yandex con consulta '{q_text}': {e}")
+        return None
+
+    @staticmethod
+    def is_perfume(name: str) -> bool:
+        import re
+        name_lower = name.lower()
+        perfume_indicators = [
+            r'\b\d+\s*(?:ml|oz)\b',
+            r'\bedp\b', r'\bedt\b',
+            r'\beau\s+de\b',
+            r'\bparfum\b', r'\btoilette\b',
+            r'\bcologne\b', r'\bfragrance\b',
+            r'\bperfume\b', r'\bseduction\b',
+            r'\bblue\s+seduction\b', r'\bcolonia\b',
+            r'\bfragrantica\b', r'\bsplash\b'
+        ]
+        return any(re.search(pat, name_lower) for pat in perfume_indicators)
+
+    @staticmethod
+    def is_device_or_appliance(name: str) -> bool:
+        import re
+        name_lower = name.lower()
+        device_indicators = [
+            r'\bgalaxy\b', r'\biphone\b', r'\bxiaomi\b', r'\bredmi\b',
+            r'\bhuawei\b', r'\bmotorola\b', r'\bcelular\b', r'\btelefono\b',
+            r'\bsmartphone\b', r'\bmoto\s+g\b', r'\blavadora\b', r'\bnevera\b',
+            r'\brefrigerador\b', r'\bsecadora\b', r'\bestufa\b', r'\bmicroondas\b',
+            r'\bhorno\b', r'\bdrija\b', r'\btope\b', r'\blicuadora\b', r'\bextractor\b',
+            r'\baire\s+acondicionado\b', r'\bcocina\b', r'\btelevisor\b', r'\bsmart\s+tv\b',
+            r'\bfreezer\b', r'\bcongelador\b'
+        ]
+        return any(re.search(pat, name_lower) for pat in device_indicators)
+
+    @staticmethod
+    def _search_yandex_image(product_name: str) -> str | None:
+        """Busca una imagen de producto en Yandex Images usando curl con soporte de variaciones fallback."""
+        import subprocess
+        import urllib.parse
+        import re
+        import html as html_lib
+        
+        cleaned_query = ExtractorService._clean_product_name_for_search(product_name)
+        queries = []
+        if ExtractorService.is_device_or_appliance(product_name):
+            # Usar comillas para buscar el nombre exacto del modelo y forzar fondo blanco
+            queries.append((f'"{cleaned_query}" official product white background', 25))
+            queries.append((f'"{cleaned_query}" producto fondo blanco', 25))
+            queries.append((cleaned_query, 20))  # Fallback sin fondo blanco pero con nombre exacto
+        else:
+            queries.append((cleaned_query, 15))
+        # Siempre incluir el nombre original como fallback de baja prioridad
+        queries.append((product_name, 10))
+
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        
+        for idx, (q_text, min_score) in enumerate(queries):
+            logger.info(f"Buscando imagen en Yandex Images para: {product_name} (Consulta {idx+1}: {q_text})")
+            try:
+                encoded_query = urllib.parse.quote(q_text)
+                url = f"https://yandex.com/images/search?text={encoded_query}"
+                cmd = ["curl", "-s", "-L", "-A", user_agent, url]
+                result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=10)
                 
-                if fragrantica_urls:
-                    best_img = fragrantica_urls[0]
-                    logger.info(f"Imagen oficial de Fragrantica encontrada: {best_img}")
-                    return best_img
-        except Exception as e:
-            logger.warning(f"Error consultando Fragrantica en Brave para '{product_name}': {e}")
-            
+                if result.returncode == 0 and result.stdout:
+                    decoded_html = html_lib.unescape(result.stdout)
+                    img_urls = re.findall(r'(https?://[^\s\"\'\<\>\\#]+?\.(?:jpg|jpeg|png|webp))', decoded_html)
+                    filtered_urls = list(set([u for u in img_urls if "yandex" not in u and "yastatic" not in u]))
+                    
+                    if not filtered_urls:
+                        continue
+                        
+                    scored_images = []
+                    for u in filtered_urls:
+                        score = ExtractorService._score_image_url(u, product_name)
+                        scored_images.append((score, u))
+                        
+                    scored_images.sort(key=lambda x: x[0], reverse=True)
+                    best_score, best_img = scored_images[0]
+                    
+                    if best_score >= min_score:
+                        logger.info(f"Imagen seleccionada en Yandex para '{product_name}' con consulta '{q_text}' (Puntaje={best_score}): {best_img}")
+                        return best_img
+            except Exception as e:
+                logger.warning(f"Error consultando Yandex con '{q_text}': {e}")
+                
         return None
 
     @staticmethod
     def search_image(product_name: str) -> str | None:
-        """Busca una imagen del producto (primero Fragrantica, luego Brave Search, luego Bing)."""
+        """Busca una imagen del producto (primero Fragrantica, luego Yandex, luego Brave Search, luego Bing)."""
         if not product_name or not isinstance(product_name, str):
             return None
             
@@ -262,12 +371,17 @@ class ExtractorService:
             
         logger.info(f"Iniciando búsqueda de imagen para: {product_name}")
         
-        # 1. Intentar primero con Fragrantica (específico para perfumes)
-        frag_img = ExtractorService._search_fragrantica_image(product_name)
-        if frag_img:
-            return frag_img
+        # 1. Si es perfume, buscar únicamente en Fragrantica
+        if ExtractorService.is_perfume(product_name):
+            logger.info(f"El producto '{product_name}' ha sido detectado como PERFUME. Búsqueda exclusiva en Fragrantica.")
+            return ExtractorService._search_fragrantica_image(product_name)
             
-        # 2. Intentar con Brave Search general (usando curl, alta tasa de éxito y precisión)
+        # 2. Si no es perfume, intentar primero con Yandex Images (excelente tasa de éxito sin bloqueos)
+        yandex_img = ExtractorService._search_yandex_image(product_name)
+        if yandex_img:
+            return yandex_img
+            
+        # 3. Intentar con Brave Search general (usando curl)
         brave_img = ExtractorService._search_brave_image(product_name)
         if brave_img:
             return brave_img
@@ -281,14 +395,20 @@ class ExtractorService:
         logger.warning(f"Brave Search no devolvió imagen apta para '{product_name}'. Usando fallback de Bing...")
         
         cleaned = ExtractorService._clean_product_name_for_search(product_name)
-        variations = [
-            cleaned,
-            f"{cleaned} perfume",
-            f"{cleaned} bottle",
-            f"{cleaned} png"
-        ]
         
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, with Gecko) Chrome/115.0.0.0 Safari/537.36"
+        if ExtractorService.is_device_or_appliance(product_name):
+            variations = [
+                f"{cleaned} official product white background",
+                f"{cleaned} producto fondo blanco",
+                f"{cleaned} png"
+            ]
+        else:
+            variations = [
+                cleaned,
+                f"{cleaned} png"
+            ]
+        
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
         
         for var in variations:
             if not var or var.strip() == "":
@@ -508,11 +628,9 @@ class ExtractorService:
         client = Groq(api_key=api_key)
         base64_image = base64.b64encode(file_bytes).decode("utf-8")
 
-        # Actualizado con los modelos del proyecto de importación
+        # Actualizado con los modelos de Groq activos
         models_to_try = [
-            "meta-llama/llama-4-scout-17b-16e-instruct",
-            "llama-3.2-11b-vision-preview",
-            "llama-3.2-90b-vision-preview"
+            "meta-llama/llama-4-scout-17b-16e-instruct"
         ]
 
         last_error = None
@@ -571,4 +689,55 @@ class ExtractorService:
 
         raise last_error or Exception("Todos los modelos de Groq Vision fallaron")
 
+    @staticmethod
+    def extract_from_text(text: str) -> List[Dict[str, Any]]:
+        """Extrae productos a partir de texto usando Groq."""
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("Falta GROQ_API_KEY en variables de entorno")
 
+        client = Groq(api_key=api_key)
+
+        try:
+            logger.info("Intentando Groq Text extraction")
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "Eres un asistente experto en analizar texto de listados de productos (por ejemplo WhatsApp). "
+                            "Extrae una lista de productos a partir del texto ingresado. "
+                            "Devuelve SOLO un JSON con una llave 'products' que contenga un array "
+                            "con objetos que tengan exactamente las siguientes llaves: "
+                            "name (solo la marca y descripción general, SIN el modelo), "
+                            "specifications (el modelo exacto o código alfanumérico del producto, ej: WT18WVTM), "
+                            "price (number extraído del texto, sin símbolos), quantity (number, asume 1 si no dice), category (infiere una categoría general, ej: 'Línea Blanca', 'Telefonía', 'Perfumes'). "
+                            "Ejemplo: {\"products\": [{\"name\": \"LAVADORA LG 18KG BLANCA\", \"specifications\": \"WT18WVTM\", "
+                            "\"price\": 620.0, \"quantity\": 1, \"category\": \"Linea Blanca\"}]}"
+                        )
+                    },
+                    {
+                        "role": "user",
+                        "content": text
+                    }
+                ],
+                response_format={"type": "json_object"}
+            )
+
+            content = response.choices[0].message.content
+            if not content:
+                return []
+
+            parsed = json.loads(content)
+            for val in parsed.values():
+                if isinstance(val, list):
+                    return val
+            if isinstance(parsed, list):
+                return parsed
+            if isinstance(parsed, dict) and all(k in parsed for k in ["name", "price"]):
+                return [parsed]
+            return []
+        except Exception as e:
+            logger.error(f"Fallo Groq text extraction: {str(e)}")
+            raise Exception(f"Fallo Groq text extraction: {str(e)}")

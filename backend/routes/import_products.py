@@ -6,28 +6,12 @@ from sqlalchemy.orm import Session
 from database.db import get_db, SessionLocal
 from models.product import Product
 from services.extractor import ExtractorService
+from routes.auth import require_role
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/products/import", tags=["Products Import"])
 
-def save_local_image(file_bytes: bytes, filename: str) -> str:
-    """Guarda una imagen localmente en el servidor y devuelve su URL relativa."""
-    import os
-    import uuid
-    
-    upload_dir = os.path.join(os.getcwd(), "static", "uploads")
-    os.makedirs(upload_dir, exist_ok=True)
-    
-    ext = filename.split(".")[-1].lower() if "." in filename else "png"
-    if ext not in ["jpg", "jpeg", "png", "webp", "gif"]:
-        ext = "png"
-    unique_filename = f"{uuid.uuid4().hex}.{ext}"
-    file_path = os.path.join(upload_dir, unique_filename)
-    
-    with open(file_path, "wb") as f:
-        f.write(file_bytes)
-        
-    return f"/static/uploads/{unique_filename}"
+from utils.file_utils import save_local_image
 
 def update_product_images_background(product_ids: list[int]):
     """Busca imágenes en segundo plano para no bloquear el request de importación."""
@@ -58,8 +42,12 @@ def update_product_images_background(product_ids: list[int]):
 async def import_products(
     file: UploadFile = File(...),
     search_images: bool = True,
+    contains_prices: bool = False,
+    price_currency: str = "Divisas",
+    apply_discount: bool = False,
     background_tasks: BackgroundTasks = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("admin"))
 ):
     """
     Sube una factura (PDF/Imagen) o una planilla Excel, extrae la lista
@@ -92,12 +80,7 @@ async def import_products(
             logger.error(f"Error al guardar imagen de producto subida: {e}")
 
     try:
-        def is_valid_key(key: str | None) -> bool:
-            if not key:
-                return False
-            placeholder_terms = ["tu_groq_key", "aqui", "placeholder", "your_api_key"]
-            key_lower = key.strip().lower()
-            return not any(term in key_lower for term in placeholder_terms)
+        from utils.validation import is_valid_key
 
         if is_excel:
             logger.info("Procesando archivo como planilla Excel.")
@@ -136,6 +119,8 @@ async def import_products(
 
     products_added = []
     try:
+        rate = 1.85
+        
         for p in extracted_products:
             unique_qr = f"prod-{uuid.uuid4().hex[:6]}"
             
@@ -152,13 +137,39 @@ async def import_products(
             if not img_url and uploaded_image_url and len(extracted_products) == 1:
                 img_url = uploaded_image_url
 
+            raw_price = float(p.get("price") or 0.0)
+            
+            name_lower = (p.get("name") or "").lower()
+            cat_lower = (p.get("category") or "").lower()
+            is_perfume = "perfume" in name_lower or "fragancia" in name_lower or "perfume" in cat_lower
+            
+            db_price = raw_price
+            if is_perfume:
+                if price_currency == "Divisas":
+                    db_price = raw_price * 2
+                else:
+                    db_price = raw_price
+            else:
+                if price_currency == "Bolívares":
+                    if apply_discount:
+                        db_price = raw_price / (rate * 0.9)
+                    else:
+                        db_price = raw_price / rate
+                else:
+                    db_price = raw_price
+
+            final_price = db_price
+
+            product_name = p.get("name") or "Producto sin nombre"
+            is_perfume = "perfume" in product_name.lower() or "fragancia" in product_name.lower()
+            
             new_prod = Product(
                 qr_id=unique_qr,
-                name=p.get("name") or "Producto sin nombre",
+                name=product_name,
                 description=p.get("specifications") or "",
-                price=float(p.get("price") or 0.0),
+                price=final_price,
                 stock=int(p.get("quantity") or 0),
-                category="General",
+                category="Perfumería" if is_perfume else "General",
                 product_type="Electrodomésticos",
                 image_url=img_url,
                 is_ar_visible=1
@@ -208,16 +219,121 @@ async def import_products(
         raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(e)}")
 
     return {
-        "message": "Importación completada exitosamente",
-        "imported_count": len(products_added),
-        "products": [
-            {
-                "id": p.id,
-                "qr_id": p.qr_id,
-                "name": p.name,
-                "price": p.price,
-                "stock": p.stock
-            }
-            for p in products_added
-        ]
+        "success": True,
+        "message": f"Se agregaron {len(products_added)} productos.",
+        "data": {
+            "imported_count": len(products_added),
+            "products": [
+                {
+                    "id": p.id,
+                    "qr_id": p.qr_id,
+                    "name": p.name,
+                    "price": p.price,
+                    "stock": p.stock
+                }
+                for p in products_added
+            ]
+        }
+    }
+
+from pydantic import BaseModel
+class ImportTextRequest(BaseModel):
+    text: str
+    search_images: bool = False
+    contains_prices: bool = False
+    price_currency: str = "Divisas"
+    apply_discount: bool = False
+
+@router.post("/text")
+def import_products_text(
+    request: ImportTextRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    try:
+        extracted_products = ExtractorService.extract_from_text(request.text)
+    except Exception as e:
+        logger.error(f"Error extrayendo de texto: {e}")
+        raise HTTPException(status_code=422, detail=f"Error al extraer productos del texto: {e}")
+        
+    if not extracted_products:
+        raise HTTPException(status_code=422, detail="No se pudieron extraer productos del texto")
+        
+    products_added = []
+    try:
+        rate = 1.85
+        for p in extracted_products:
+            unique_qr = f"prod-{uuid.uuid4().hex[:6]}"
+            raw_price = float(p.get("price") or 0.0)
+            
+            name_lower = (p.get("name") or "").lower()
+            cat_lower = (p.get("category") or "").lower()
+            is_perfume = "perfume" in name_lower or "fragancia" in name_lower or "perfume" in cat_lower
+            
+            db_price = raw_price
+            if is_perfume:
+                if request.price_currency == "Divisas":
+                    db_price = raw_price * 2
+                else:
+                    db_price = raw_price
+            else:
+                if request.price_currency == "Bolívares":
+                    if request.apply_discount:
+                        db_price = raw_price / (rate * 0.9)
+                    else:
+                        db_price = raw_price / rate
+                else:
+                    db_price = raw_price
+
+            final_price = db_price
+
+            new_prod = Product(
+                qr_id=unique_qr,
+                name=p.get("name") or "Producto sin nombre",
+                description=p.get("specifications") or "",
+                price=final_price,
+                stock=int(p.get("quantity") or 1),
+                category=p.get("category") or "General",
+                product_type="Linea Blanca",
+                image_url=None,
+                is_ar_visible=1
+            )
+            db.add(new_prod)
+            products_added.append(new_prod)
+        db.commit()
+        for p in products_added:
+            db.refresh(p)
+            
+        if request.search_images:
+            ids_to_search = [p.id for p in products_added]
+            if len(ids_to_search) <= 8:
+                for p in products_added:
+                    img_url = ExtractorService.search_image(p.name)
+                    if img_url:
+                        p.image_url = img_url
+                db.commit()
+            else:
+                sync_ids = ids_to_search[:3]
+                async_ids = ids_to_search[3:]
+                for p in products_added:
+                    if p.id in sync_ids:
+                        img_url = ExtractorService.search_image(p.name)
+                        if img_url:
+                            p.image_url = img_url
+                db.commit()
+                if background_tasks and async_ids:
+                    background_tasks.add_task(update_product_images_background, async_ids)
+            for p in products_added:
+                db.refresh(p)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    return {
+        "success": True,
+        "message": f"Se agregaron {len(products_added)} productos desde texto.",
+        "data": {
+            "imported_count": len(products_added),
+            "products": [{"id": p.id, "name": p.name} for p in products_added]
+        }
     }

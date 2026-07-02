@@ -40,8 +40,9 @@ class MyApp extends StatelessWidget {
         final uri = Uri.parse(settings.name ?? '/');
         
         // Handle dynamic product detail route: /product/:qrId
-        if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'product') {
-          final qrId = uri.pathSegments[1];
+        // The qrId may contain slashes (e.g., 'producto/1'), so we rejoin all segments after 'product'
+        if (uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'product' && uri.pathSegments.length >= 2) {
+          final qrId = Uri.decodeComponent(uri.pathSegments.skip(1).join('/'));
           return MaterialPageRoute(
             settings: settings,
             builder: (context) => ProductDetailScreen(qrId: qrId),

@@ -1,15 +1,16 @@
 import logging
 import os
-from fastapi import FastAPI, Request, HTTPException, Header
+from fastapi import FastAPI, Request, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from mysql.connector import Error as MySQLError
-from routes.auth import router as auth_router
+from routes.auth import router as auth_router, get_current_user
 from routes.products import router as product_router
 from routes.chatbot import router as chatbot_router
 from routes.admin import router as admin_router
 from routes.import_products import router as import_router
+from models.user import User
 
 from fastapi.staticfiles import StaticFiles
 import os
@@ -57,11 +58,9 @@ async def health_check():
     return {"status": "healthy"}
 
 @app.get("/dashboard")
-def dashboard(authorization: str = Header(None)):
-    if not authorization:
-        raise HTTPException(status_code=401, detail="No tienes permiso, falta el token")
+def dashboard(current_user: User = Depends(get_current_user)):
     return {
         "mensaje": "¡Bienvenido al panel de Innova Center!",
         "ventas_hoy": 150.50,
-        "usuario_activo": "admin@logw.com"
+        "usuario_activo": current_user.email
     }

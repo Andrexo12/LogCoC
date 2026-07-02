@@ -29,7 +29,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     
     Navigator.pushNamed(
       context,
-      '/product/$code',
+      '/product/${Uri.encodeComponent(code)}',
     ).then((_) {
       setState(() => _isScanCompleted = false);
     });

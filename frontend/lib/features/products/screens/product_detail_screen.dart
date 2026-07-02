@@ -39,7 +39,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   void _shareProduct() {
     // Dynamic link matching the browser URL format: origin + /#/product/qrId
-    final String shareUrl = '${Uri.base.origin}/#/product/${widget.qrId}';
+    final String shareUrl = '${Uri.base.origin}/#/product/${Uri.encodeComponent(widget.qrId)}';
     Clipboard.setData(ClipboardData(text: shareUrl));
     
     ScaffoldMessenger.of(context).showSnackBar(

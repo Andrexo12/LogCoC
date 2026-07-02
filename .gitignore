@@ -37,3 +37,9 @@ walkthrough.md
 analysis_results.md
 
 
+# Additional ignored files
+.metadata
+.coverage
+.pytest_cache/
+.mypy_cache/
+.gradle/

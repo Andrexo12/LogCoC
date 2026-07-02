@@ -64,9 +64,10 @@ class AdminDashboard extends StatelessWidget {
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: RepaintBoundary(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -141,6 +142,7 @@ class AdminDashboard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),

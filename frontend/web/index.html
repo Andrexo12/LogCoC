@@ -38,12 +38,6 @@
   <meta http-equiv="Expires" content="0" />
 </head>
 <body>
-  <!-- Agregamos un timestamp para forzar la recarga del JS -->
-  <script>
-    var script = document.createElement('script');
-    script.src = "main.dart.js?v=" + new Date().getTime();
-    script.type = "application/javascript";
-    document.body.appendChild(script);
-  </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

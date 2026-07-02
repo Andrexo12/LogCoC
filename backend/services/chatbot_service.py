@@ -3,6 +3,7 @@ from groq import Groq
 from sqlalchemy.orm import Session
 from models.product import Product
 from services.product_service import ProductService
+from utils.validation import is_valid_key
 
 class ChatbotService:
     def __init__(self):
@@ -11,7 +12,7 @@ class ChatbotService:
         
         self.groq_key = os.getenv("GROQ_API_KEY")
         
-        self.groq_valid = self._is_valid_key(self.groq_key)
+        self.groq_valid = is_valid_key(self.groq_key)
         
         self.client = None
         if self.groq_valid:
@@ -23,15 +24,7 @@ class ChatbotService:
         
         self.model = "llama-3.3-70b-versatile"
 
-    def _is_valid_key(self, key: str | None) -> bool:
-        if not key:
-            return False
-        key_stripped = key.strip()
-        if not key_stripped:
-            return False
-        placeholder_terms = ["tu_groq_key", "aqui", "placeholder", "your_api_key"]
-        key_lower = key_stripped.lower()
-        return not any(term in key_lower for term in placeholder_terms)
+    # Deprecated validation method moved to utils.validation.is_valid_key
 
     async def get_response(
         self, 
@@ -61,12 +54,16 @@ class ChatbotService:
         === PREGUNTAS FRECUENTES Y CONOCIMIENTOS ADICIONALES ===
         {training_data}
         
-        === REGLAS IMPORTANTES DE RESPUESTA ===
-        1. Si el cliente pregunta sobre precios de productos específicos del catálogo o del producto actual, recuerda aplicar la regla de redondeo de Innova Center: redondea al 0.50 superior (ej. 10.15 se convierte en 10.50, 15.00 queda en 15.00, 12.60 se convierte en 13.00, etc.). Presenta siempre el precio redondeado de manera persuasiva.
-        2. Basa tus respuestas estrictamente en el Catálogo de Productos y en el Contexto del Negocio proporcionados arriba. No inventes productos ni stock que no estén explícitamente listados.
-        3. Si te preguntan si un producto está disponible, revisa el catálogo. Si tiene Stock > 0, confirma la disponibilidad. Si Stock es 0 o no está en el catálogo, indica amablemente que no está en stock actualmente pero que pueden visitarnos para ver alternativas.
-        4. Si no conoces un detail técnico o respuesta a una pregunta, invita cordialmente al cliente a visitar la tienda física en el Orinokia Mall.
-        5. Mantén las respuestas concisas pero informativas y profesionales.
+        === REGLAS IMPORTANTES DE RESPUESTA (ESTRICTAS) ===
+        1. PROHIBIDO USAR ASTERISCOS: No uses formato markdown de negrita ni cursiva (* o **).
+        2. EL PRECIO BASE ES DIVISAS: El "Precio Base en Divisas (USD)" que ves en el contexto es el precio en dólares. SOLO dáselo al cliente si pregunta EXPRESAMENTE por el precio en divisas o dólares.
+        3. CÁLCULO INVISIBLE DEL PRECIO BOLÍVARES: Para dar el precio normal, toma el Precio Base en Divisas, multiplícalo por la tasa del contexto general (ej. 1.85) y aplica redondeo al 0.50 superior. Este es tu "Precio General Bolívares". NUNCA muestres esta operación matemática ni signos como =, *, +.
+        4. CÁLCULO INVISIBLE DEL DESCUENTO: Si hay un descuento en el contexto (ej. 10%), aplícalo SOLO al "Precio General Bolívares" calculado en el paso anterior. Este descuento es EXCLUSIVO para pagos en bolívares. Nunca le quites el 10% al precio en divisas.
+        5. PRESENTACIÓN EXACTA: Da la respuesta usando ÚNICAMENTE los resultados en bolívares y con esta estructura textual exacta: "Su precio es $[Precio General Bolívares]. Y, actualmente, por lista tiene un descuento específico, quedando en $[Precio Descuento Bolívares]."
+        6. NO EXPLIQUES NADA: No uses las palabras "divisas" o "bolívares" en el mensaje por defecto. No expliques que hay una tasa cambiaria. Solo da la respuesta exacta de la regla 5.
+        7. Basa tus respuestas estrictamente en el Catálogo de Productos y en el Contexto proporcionado.
+        8. Si te preguntan por disponibilidad, revisa el catálogo. Si tiene Stock > 0, confirma la disponibilidad. Si no hay, invita amablemente a la tienda a ver alternativas.
+        9. Si no conoces un detalle, invita al cliente a visitar la tienda física en el Orinokia Mall. Mantén la fluidez conversacional.
         """
         
         # Intentar con Groq si es válido
@@ -151,12 +148,12 @@ class ChatbotService:
             return "No hay un producto específico seleccionado en este momento."
         
         rounded_price = ProductService.apply_rounding(product.price)
+        model_info = f"\n        Modelo: {product.model}" if product.model and product.product_type == 'linea blanca' else (f"\n        Modelo: {product.model}" if product.model else "")
         return f"""
-        Producto: {product.name}
+        Producto: {product.name}{model_info}
         Categoría: {product.category}
         Descripción: {product.description}
-        Precio Original: ${product.price}
-        Precio Final (Redondeado): ${rounded_price}
+        Precio Base en Divisas (USD): ${product.price}
         Stock disponible: {product.stock}
         Garantía: 1 año directamente en Innova Center.
         """

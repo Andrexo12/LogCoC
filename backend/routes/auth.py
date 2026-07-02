@@ -1,5 +1,6 @@
 from datetime import timedelta
-from fastapi import APIRouter, HTTPException, Header, Depends
+from fastapi import APIRouter, HTTPException, Header, Depends, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -8,6 +9,34 @@ from services.auth_service import AuthService
 from database.db import get_db
 
 router = APIRouter(tags=["Authentication"])
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    payload = AuthService.decode_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado"
+        )
+    email = payload.get("sub")
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario no encontrado"
+        )
+    return user
+
+def require_role(required_role: str):
+    def dependency(current_user: User = Depends(get_current_user)):
+        if current_user.role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permisos insuficientes"
+            )
+        return current_user
+    return dependency
 
 @router.post("/register")
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
@@ -66,19 +95,10 @@ def forgot_password(email: str, db: Session = Depends(get_db)):
     return {"message": "Enlace generado", "debug_link": reset_link}
 
 @router.get("/me")
-def get_current_user(authorization: str = Header(None)):
-    if not authorization:
-        raise HTTPException(status_code=401, detail="No estas autorizado, falta el token")
-    
-    token = authorization.replace("Bearer ", "")
-    payload = AuthService.decode_token(token)
-    
-    if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido o expirado")
-        
+def get_me(current_user: User = Depends(get_current_user)):
     return {
-        "email": payload.get("sub"),
-        "role": payload.get("role"),
-        "rol": payload.get("role"),
+        "email": current_user.email,
+        "role": current_user.role,
+        "rol": current_user.role,
         "status": "verificado"
     }

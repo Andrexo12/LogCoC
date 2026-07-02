@@ -14,7 +14,7 @@ SECRET_KEY = os.getenv("JWT_SECRET")
 if not SECRET_KEY:
     raise RuntimeError("JWT_SECRET no encontrado en variables de entorno")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
+ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 horas
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 

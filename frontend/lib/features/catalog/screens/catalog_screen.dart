@@ -336,10 +336,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final String qrId = prod['qr_id'] ?? '';
     final bool isAr = prod['is_ar_visible'] == 1;
 
+    final bool isPerfume = name.toLowerCase().contains('perfume') || name.toLowerCase().contains('fragancia') || category.toLowerCase().contains('perfume');
+    
+    final double displayDivisas = isPerfume ? roundedPrice / 2 : roundedPrice;
+    final double displayBs = isPerfume ? roundedPrice : roundedPrice * 1.85;
+
     return GestureDetector(
       onTap: () {
         if (qrId.isNotEmpty) {
-          Navigator.pushNamed(context, '/product/$qrId');
+          Navigator.pushNamed(context, '/product/${Uri.encodeComponent(qrId)}');
         }
       },
       child: Container(
@@ -482,18 +487,17 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '\$${price.toStringAsFixed(2)}',
+                        'Divisas: \$${displayDivisas.toStringAsFixed(2)}',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.4),
-                          fontSize: 11,
-                          decoration: TextDecoration.lineThrough,
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 12,
                         ),
                       ),
                       Text(
-                        '\$${roundedPrice.toStringAsFixed(2)}',
+                        'Precio: ${displayBs.toStringAsFixed(2)}',
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
+                          color: Colors.tealAccent,
+                          fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

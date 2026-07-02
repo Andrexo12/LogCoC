@@ -15,10 +15,12 @@ class _AITrainingScreenState extends State<AITrainingScreen> {
   final _promoDetailsController = TextEditingController();
   final _contextController = TextEditingController();
   final _percentController = TextEditingController();
+  final _instructionController = TextEditingController();
   
   bool _isLoading = false;
   List<dynamic> _trainingData = [];
   Map<String, dynamic>? _generalContextItem;
+  final List<Map<String, String>> _chatHistory = [];
 
   @override
   void initState() {
@@ -32,6 +34,7 @@ class _AITrainingScreenState extends State<AITrainingScreen> {
     _promoDetailsController.dispose();
     _contextController.dispose();
     _percentController.dispose();
+    _instructionController.dispose();
     super.dispose();
   }
 
@@ -91,6 +94,31 @@ class _AITrainingScreenState extends State<AITrainingScreen> {
 
     _showToast(res['message']);
     _loadData();
+  }
+
+  Future<void> _trainBotChat() async {
+    final instruction = _instructionController.text.trim();
+    if (instruction.isEmpty) {
+      _showMsg('Escribe una instrucción para que el bot aprenda');
+      return;
+    }
+    setState(() {
+      _chatHistory.add({'sender': 'admin', 'text': instruction});
+      _instructionController.clear();
+      _isLoading = true;
+    });
+    
+    final res = await _apiService.trainChatbot(instruction);
+    
+    setState(() {
+      _isLoading = false;
+      if (res['success']) {
+        _chatHistory.add({'sender': 'bot', 'text': res['message'] ?? 'Instrucción aprendida correctamente.'});
+        _loadData();
+      } else {
+        _chatHistory.add({'sender': 'bot', 'text': 'Error: ${res['message']}'});
+      }
+    });
   }
 
   Future<void> _savePromoFAQ() async {
@@ -253,12 +281,12 @@ class _AITrainingScreenState extends State<AITrainingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Promociones y Campañas Activas',
+            'Cerebro y Comportamiento del Chatbot',
             style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            'Define aquí la campaña principal del mes o semana. El Asesor AI recordará y priorizará recomendar estas ofertas de forma proactiva a los clientes.',
+            'El Asesor AI utiliza este contexto base para responder. Puedes editarlo manualmente o utilizar el Entrenador AI de abajo para darle instrucciones en lenguaje natural (ej. "Calcula precios a 1.85 y diles que hay un 10% de descuento").',
             style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13, height: 1.4),
           ),
           const SizedBox(height: 24),
@@ -297,7 +325,7 @@ class _AITrainingScreenState extends State<AITrainingScreen> {
           
           // Campo de Contexto/Descripción de Campaña
           const Text(
-            'Descripción y Contexto de la Campaña',
+            'Contexto Base Actual (Editable Manualmente)',
             style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
@@ -342,8 +370,102 @@ class _AITrainingScreenState extends State<AITrainingScreen> {
               onPressed: _savePromoContext,
               icon: const Icon(Icons.save_outlined, color: Color(0xFF0F172A)),
               label: const Text(
-                'Guardar Campaña Activa',
+                'Guardar Contexto Manualmente',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+            ),
+          ),
+          const SizedBox(height: 40),
+
+          // Entrenador AI (Chat Interface)
+          const Text(
+            'Entrenador AI (Chat)',
+            style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 350,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.cyanAccent.withOpacity(0.3), width: 1.2),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: GlassEffect(
+                child: Column(
+                  children: [
+                    // Chat history
+                    Expanded(
+                      child: _chatHistory.isEmpty
+                          ? Center(
+                              child: Text(
+                                'Envía instrucciones para que el bot aprenda.',
+                                style: TextStyle(color: Colors.white.withOpacity(0.3)),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _chatHistory.length,
+                              itemBuilder: (context, index) {
+                                final msg = _chatHistory[index];
+                                final isAdmin = msg['sender'] == 'admin';
+                                return Align(
+                                  alignment: isAdmin ? Alignment.centerRight : Alignment.centerLeft,
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: isAdmin ? Colors.cyanAccent.withOpacity(0.2) : Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: const Radius.circular(16),
+                                        topRight: const Radius.circular(16),
+                                        bottomLeft: Radius.circular(isAdmin ? 16 : 0),
+                                        bottomRight: Radius.circular(isAdmin ? 0 : 16),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      msg['text'] ?? '',
+                                      style: TextStyle(
+                                        color: isAdmin ? Colors.cyanAccent : Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    // Input area
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.1))),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _instructionController,
+                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                              decoration: InputDecoration(
+                                hintText: 'Ej: A partir de hoy calcula a 1.85',
+                                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                                border: InputBorder.none,
+                                isDense: true,
+                              ),
+                              onSubmitted: (_) => _trainBotChat(),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.send_rounded, color: Colors.cyanAccent),
+                            onPressed: _trainBotChat,
+                          )
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

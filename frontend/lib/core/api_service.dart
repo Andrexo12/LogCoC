@@ -30,11 +30,16 @@ class ApiService {
     return 'http://192.168.1.130:8000';
   }
 
-  Future<Map<String, dynamic>> importProductsFile(List<int> fileBytes, String filename, {bool searchImages = true}) async {
+  Future<Map<String, dynamic>> importProductsFile(List<int> fileBytes, String filename, {bool searchImages = true, bool containsPrices = false, String priceCurrency = 'Divisas', bool applyDiscount = false}) async {
     final token = await _getToken();
     try {
       final uri = Uri.parse('$baseUrl/api/products/import').replace(
-        queryParameters: {'search_images': searchImages.toString()},
+        queryParameters: {
+          'search_images': searchImages.toString(),
+          'contains_prices': containsPrices.toString(),
+          'price_currency': priceCurrency,
+          'apply_discount': applyDiscount.toString(),
+        },
       );
       final request = http.MultipartRequest('POST', uri);
       
@@ -82,6 +87,47 @@ class ApiService {
         return {
           'success': false,
           'message': error['detail'] ?? 'Error al importar archivo',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> importProductsText(String text, {bool searchImages = true, bool containsPrices = false, String priceCurrency = 'Divisas', bool applyDiscount = false}) async {
+    final token = await _getToken();
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/products/import/text'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'text': text,
+          'search_images': searchImages,
+          'contains_prices': containsPrices,
+          'price_currency': priceCurrency,
+          'apply_discount': applyDiscount,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': jsonDecode(response.body),
+        };
+      } else {
+        Map<String, dynamic> error = {};
+        try {
+          error = jsonDecode(response.body);
+        } catch (_) {}
+        return {
+          'success': false,
+          'message': error['detail'] ?? 'Error al importar texto',
         };
       }
     } catch (e) {
@@ -200,6 +246,31 @@ class ApiService {
         return {'success': true, 'message': 'Guardado con éxito'};
       } else {
         return {'success': false, 'message': 'Error del servidor: ${response.statusCode}'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> trainChatbot(String instruction) async {
+    final token = await _getToken();
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/admin/ai-training/chat'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'instruction': instruction,
+        }),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        Map<String, dynamic> error = {};
+        try { error = jsonDecode(response.body); } catch (_) {}
+        return {'success': false, 'message': error['detail'] ?? 'Error al entrenar bot'};
       }
     } catch (e) {
       return {'success': false, 'message': 'Error de conexión: $e'};
@@ -411,6 +482,49 @@ class ApiService {
       
       if (response.statusCode == 200) {
         return {'success': true, 'message': 'Eliminados con éxito'};
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': error['detail'] ?? 'Error del servidor: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
+  Future<List<dynamic>> getARSettings() async {
+    final token = await _getToken();
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/admin/ar-settings'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      print('Error al obtener configuraciones AR: $e');
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>> toggleARSetting(String sectionName, bool isEnabled) async {
+    final token = await _getToken();
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/admin/ar-settings/toggle?section_name=$sectionName&is_enabled=$isEnabled'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': 'Actualizado con éxito'};
       } else {
         final error = jsonDecode(response.body);
         return {
