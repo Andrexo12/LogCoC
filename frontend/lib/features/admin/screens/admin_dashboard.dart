@@ -1,9 +1,28 @@
-import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import '../../auth/services/auth_service.dart';
+import '../../statistics/statistics_screen.dart';
+import 'product_management_screen.dart';
+import 'qr_generator_screen.dart';
+import 'ar_settings_screen.dart';
+import 'ai_training_screen.dart';
 
-class AdminDashboard extends StatelessWidget {
+class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
+
+  @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends State<AdminDashboard> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _screens = [
+    const StatisticsScreen(),
+    const ProductManagementScreen(),
+    const QrGeneratorScreen(),
+    const ARSettingsScreen(),
+    const AITrainingScreen(),
+  ];
 
   Future<void> _handleLogout(BuildContext context) async {
     await AuthService().logout();
@@ -16,205 +35,143 @@ class AdminDashboard extends StatelessWidget {
     }
   }
 
+  Widget _buildSidebarItem(int index, String title, IconData icon) {
+    final isSelected = _selectedIndex == index;
+    return ListTile(
+      leading: Icon(icon, color: isSelected ? Colors.tealAccent : Colors.white54),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Colors.white54,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: isSelected,
+      selectedTileColor: Colors.white.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      onTap: () {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width > 768;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B1222),
-      appBar: AppBar(
-        title: const Text(
-          'Panel de Administración',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.1),
-        ),
-        centerTitle: true,
+    if (!isDesktop) {
+      // For mobile, maybe just show a bottom navigation bar or a drawer
+      return Scaffold(
         backgroundColor: const Color(0xFF0B1222),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, '/');
-            }
-          },
+        appBar: AppBar(
+          title: const Text('Innova Admin'),
+          backgroundColor: const Color(0xFF0B1222),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-            tooltip: 'Cerrar Sesión',
-            onPressed: () => _handleLogout(context),
-          )
-        ],
-      ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0B1222),
-              Color(0xFF131D31),
-              Color(0xFF1B2A47),
+        drawer: Drawer(
+          backgroundColor: const Color(0xFF131D31),
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const DrawerHeader(
+                decoration: BoxDecoration(color: Color(0xFF0B1222)),
+                child: Text('INNOVA', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 2)),
+              ),
+              _buildSidebarItem(0, 'Estadísticas', Icons.bar_chart_rounded),
+              _buildSidebarItem(1, 'Inventario', Icons.inventory_2_outlined),
+              _buildSidebarItem(2, 'Generar QR', Icons.qr_code_2_rounded),
+              _buildSidebarItem(3, 'Ajustes AR', Icons.view_in_ar_rounded),
+              _buildSidebarItem(4, 'Entrenar IA', Icons.psychology_outlined),
+              const Divider(color: Colors.white24),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.redAccent),
+                title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.redAccent)),
+                onTap: () => _handleLogout(context),
+              )
             ],
           ),
         ),
-        child: SafeArea(
-          child: RepaintBoundary(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        body: _screens[_selectedIndex],
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B1222),
+      body: Row(
+        children: [
+          // Sidebar
+          Container(
+            width: 250,
+            color: const Color(0xFF131D31),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Bienvenido, Administrador',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Gestione los productos, códigos QR, configuraciones de AR y entrenamiento de IA.',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: isDesktop ? 3 : 2,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
-                  childAspectRatio: 1.0,
-                  children: [
-                    _buildAdminCard(
-                      context,
-                      'Inventario',
-                      'Gestionar stock y precios',
-                      Icons.inventory_2_outlined,
-                      Colors.blueAccent,
-                      '/admin/products',
-                    ),
-                    _buildAdminCard(
-                      context,
-                      'Generar QR',
-                      'Generar códigos para productos',
-                      Icons.qr_code_2_rounded,
-                      Colors.tealAccent,
-                      '/admin/qr-generator',
-                    ),
-                    _buildAdminCard(
-                      context,
-                      'Ajustes AR',
-                      'Configurar visualización 3D',
-                      Icons.view_in_ar_rounded,
-                      Colors.purpleAccent,
-                      '/admin/ar-settings',
-                    ),
-                    _buildAdminCard(
-                      context,
-                      'Entrenar IA',
-                      'Promociones y campañas',
-                      Icons.psychology_outlined,
-                      Colors.orangeAccent,
-                      '/admin/ai-training',
-                    ),
-                    _buildAdminCard(
-                      context,
-                      'Reportes',
-                      'Estadísticas de escaneo',
-                      Icons.bar_chart_rounded,
-                      Colors.tealAccent,
-                      null, // Próximamente
+                const SizedBox(height: 40),
+                // Logo INNOVA
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.dashboard_customize_rounded, color: Colors.tealAccent, size: 28),
+                    SizedBox(width: 12),
+                    Text(
+                      'INNOVA',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 40),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      _buildSidebarItem(0, 'Dashboard', Icons.bar_chart_rounded),
+                      const SizedBox(height: 8),
+                      _buildSidebarItem(1, 'Inventario', Icons.inventory_2_outlined),
+                      const SizedBox(height: 8),
+                      _buildSidebarItem(2, 'Generar QR', Icons.qr_code_2_rounded),
+                      const SizedBox(height: 8),
+                      _buildSidebarItem(3, 'Ajustes AR', Icons.view_in_ar_rounded),
+                      const SizedBox(height: 8),
+                      _buildSidebarItem(4, 'Entrenar IA', Icons.psychology_outlined),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                const Divider(color: Colors.white24, indent: 24, endIndent: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: ListTile(
+                    leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+                    title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.white70)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    hoverColor: Colors.redAccent.withOpacity(0.1),
+                    onTap: () => _handleLogout(context),
+                  ),
                 ),
               ],
             ),
           ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAdminCard(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    Color accentColor,
-    String? routeName,
-  ) {
-    final bool isEnabled = routeName != null;
-
-    return GestureDetector(
-      onTap: isEnabled
-          ? () => Navigator.pushNamed(context, routeName)
-          : () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Esta función estará disponible próximamente')),
-              );
-            },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(isEnabled ? 0.05 : 0.02),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: Colors.white.withOpacity(isEnabled ? 0.15 : 0.05),
-            width: 1.2,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: GlassEffect(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    size: 40,
-                    color: isEnabled ? accentColor : Colors.white24,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: isEnabled ? Colors.white : Colors.white38,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: isEnabled ? Colors.white.withOpacity(0.5) : Colors.white12,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
+          // Main Content
+          Expanded(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                bottomLeft: Radius.circular(24),
+              ),
+              child: Container(
+                color: const Color(0xFF0B1222),
+                child: _screens[_selectedIndex],
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
-
 }

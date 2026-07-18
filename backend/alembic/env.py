@@ -24,6 +24,7 @@ from database.db import DATABASE_URL, Base
 from models.user import User
 from models.product import Product
 from models.admin import ARSetting, AITraining
+from models.statistics import ProductView, Sale, ChatbotLog
 
 # add your model's MetaData object here
 # for 'autogenerate' support

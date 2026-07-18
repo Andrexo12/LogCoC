@@ -7,6 +7,7 @@ import 'features/admin/screens/product_management_screen.dart';
 import 'features/admin/screens/qr_generator_screen.dart';
 import 'features/admin/screens/ar_settings_screen.dart';
 import 'features/admin/screens/ai_training_screen.dart';
+import 'features/statistics/statistics_screen.dart';
 import 'features/catalog/screens/catalog_screen.dart';
 import 'features/chatbot/screens/chat_screen.dart';
 import 'features/qr/screens/qr_scanner_screen.dart';
@@ -108,6 +109,11 @@ class MyApp extends StatelessWidget {
             return MaterialPageRoute(
               settings: settings,
               builder: (context) => const AdminGuard(child: AITrainingScreen()),
+            );
+          case '/admin/statistics':
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (context) => const AdminGuard(child: StatisticsScreen()),
             );
           default:
             return MaterialPageRoute(

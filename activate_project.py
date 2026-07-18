@@ -63,17 +63,26 @@ def _run_backend():
     return subprocess.Popen(backend_cmd, cwd=os.path.join(os.getcwd(), "backend"))
 
 def _run_frontend():
-    """Serve the pre‑built Flutter web assets using a simple Python HTTP server.
-    The assets are expected in `frontend/build/web`. This avoids dependence on a
-    local Flutter installation and works reliably in the Codespaces environment.
+    """Start the Flutter development web server.
+    This enables Hot Reload and updates instantly when code changes.
     """
-    static_dir = os.path.join(os.getcwd(), "frontend", "build", "web")
-    if not os.path.isdir(static_dir):
-        print("Error: No pre‑built web assets found in 'frontend/build/web'.")
-        sys.exit(1)
-    http_cmd = ["python", "-m", "http.server", "5000", "--bind", "0.0.0.0", "--directory", static_dir]
-    print("Starting frontend via Python HTTP server…")
-    return subprocess.Popen(http_cmd, cwd=os.getcwd())
+    flutter_bin = "/home/codespace/development/flutter/bin/flutter"
+    
+    # Fallback in case flutter is in PATH
+    if not os.path.exists(flutter_bin):
+        flutter_bin = "flutter"
+        
+    flutter_cmd = [
+        flutter_bin, 
+        "run", 
+        "-d", "web-server", 
+        "--web-port", "5000", 
+        "--web-hostname", "0.0.0.0", 
+        "--web-renderer", "html"
+    ]
+    
+    print("Starting frontend via Flutter Web Server…")
+    return subprocess.Popen(flutter_cmd, cwd=os.path.join(os.getcwd(), "frontend"))
 
 def activate_project():
     """Free required ports and start both backend and frontend.

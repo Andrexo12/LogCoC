@@ -40,12 +40,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from routes.statistics import router as statistics_router
+
 # Incluir rutas
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(import_router, prefix="/api", tags=["Products Import"])
 app.include_router(product_router, prefix="/api", tags=["Products"])
 app.include_router(chatbot_router, prefix="/api", tags=["Chatbot"])
 app.include_router(admin_router, prefix="/api", tags=["Admin"])
+app.include_router(statistics_router, prefix="/api/statistics", tags=["Statistics"])
 
 @app.get("/", tags=["General"])
 async def home():

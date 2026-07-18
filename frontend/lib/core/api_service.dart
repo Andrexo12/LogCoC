@@ -536,4 +536,59 @@ class ApiService {
       return {'success': false, 'message': 'Error de conexión: $e'};
     }
   }
+
+  Future<Map<String, dynamic>> getStatisticsDashboard() async {
+    final token = await _getToken();
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/statistics/dashboard'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': jsonDecode(response.body),
+        };
+      } else {
+        Map<String, dynamic> error = {};
+        try {
+          error = jsonDecode(response.body);
+        } catch (_) {}
+        return {
+          'success': false,
+          'message': error['detail'] ?? 'Error al cargar estadísticas',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> getChatbotLogsByIntent(String intent, {int limit = 5, int offset = 0}) async {
+    final token = await _getToken();
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/statistics/chatbot-logs/$intent?limit=$limit&offset=$offset'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load logs');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
 }

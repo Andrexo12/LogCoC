@@ -58,5 +58,32 @@ async def ask_bot(request: ChatRequest, db: Session = Depends(get_db)):
         general_context=general_context,
         training_data=training_context
     )
-    return {"reply": response}
+    
+    # 5. Registrar en estadísticas
+    from models.statistics import ChatbotLog
+    import re
+    msg_lower = request.message.lower()
+    
+    msg_clean = re.sub(r'[^\w\s]', '', msg_lower)
+    words = msg_clean.split()
+    
+    stop_words = {"hola", "buenas", "tardes", "dias", "noches", "gracias", "por", "favor", 
+                  "el", "la", "los", "las", "un", "una", "unos", "unas", "qué", "que", "como", 
+                  "cuando", "donde", "para", "con", "de", "del", "a", "al", "es", "esta", 
+                  "estan", "son", "tiene", "tienen", "quiero", "saber", "me", "te", "se", 
+                  "nos", "y", "o", "en", "su", "sus", "tu", "tus", "mi", "mis", "muy", "mucho",
+                  "quisiera", "ayuda", "podrias", "puedes", "holaa", "buenos"}
+                  
+    keywords = [w for w in words if w not in stop_words and len(w) > 2]
+    
+    # Tomar la palabra más representativa o "general"
+    intent = keywords[0] if keywords else "general"
 
+    try:
+        new_log = ChatbotLog(intent=intent, query_text=request.message)
+        db.add(new_log)
+        db.commit()
+    except Exception as e:
+        print(f"Error registrando estadística de chatbot: {e}")
+
+    return {"reply": response}
