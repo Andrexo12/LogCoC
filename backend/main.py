@@ -10,6 +10,7 @@ from routes.products import router as product_router
 from routes.chatbot import router as chatbot_router
 from routes.admin import router as admin_router
 from routes.import_products import router as import_router
+from routes.audit import router as audit_router
 from models.user import User
 
 from fastapi.staticfiles import StaticFiles
@@ -48,6 +49,7 @@ app.include_router(import_router, prefix="/api", tags=["Products Import"])
 app.include_router(product_router, prefix="/api", tags=["Products"])
 app.include_router(chatbot_router, prefix="/api", tags=["Chatbot"])
 app.include_router(admin_router, prefix="/api", tags=["Admin"])
+app.include_router(audit_router, prefix="/api", tags=["Audit Log"])
 app.include_router(statistics_router, prefix="/api/statistics", tags=["Statistics"])
 
 @app.get("/", tags=["General"])

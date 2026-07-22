@@ -2,6 +2,7 @@ import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/api_service.dart';
+import 'package:logw_front/core/theme/app_colors.dart';
 
 class ProductManagementScreen extends StatefulWidget {
   const ProductManagementScreen({super.key});
@@ -63,19 +64,19 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              backgroundColor: const Color(0xFF131D31),
+              backgroundColor: AppColors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(color: Colors.white.withOpacity(0.1), width: 1.2),
               ),
               title: Row(
                 children: const [
-                  Icon(Icons.upload_file_rounded, color: Colors.tealAccent),
+                  Icon(Icons.upload_file_rounded, color: AppColors.tertiary),
                   SizedBox(width: 10),
                   Text(
                     'Agregar varios productos',
                     style: TextStyle(
-                      color: Colors.white70,
+                      color: AppColors.textSecondary,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -89,7 +90,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   children: [
                     const Text(
                       'Selecciona un archivo (Excel, PDF, imagen) o ingresa datos manualmente vía texto.',
-                      style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
                     ),
                     const SizedBox(height: 12),
                     // Switch buscar imágenes
@@ -113,14 +114,14 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                 SizedBox(height: 4),
                                 Text(
                                   'Busca automáticamente imágenes de productos en internet (DuckDuckGo).',
-                                  style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.2),
+                                  style: TextStyle(color: AppColors.textMuted, fontSize: 10, height: 1.2),
                                 ),
                               ],
                             ),
                           ),
                           Switch(
                             value: localSearchImages,
-                            activeColor: Colors.tealAccent,
+                            activeColor: AppColors.tertiary,
                             onChanged: (val) {
                               setDialogState(() => localSearchImages = val);
                               setState(() => _searchImages = val);
@@ -142,7 +143,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                           CheckboxListTile(
                             title: const Text('Contiene precios', style: TextStyle(color: Colors.white)),
                             value: containsPrices,
-                            activeColor: Colors.tealAccent,
+                            activeColor: AppColors.tertiary,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             onChanged: (val) {
                               setDialogState(() => containsPrices = val ?? false);
@@ -154,12 +155,12 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               child: Row(
                                 children: [
-                                  const Text('Moneda:', style: TextStyle(color: Colors.white70)),
+                                  const Text('Moneda:', style: TextStyle(color: AppColors.textSecondary)),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: DropdownButton<String>(
                                       value: selectedCurrency,
-                                      dropdownColor: const Color(0xFF131D31),
+                                      dropdownColor: AppColors.surface,
                                       isExpanded: true,
                                       underline: const SizedBox(),
                                       style: const TextStyle(color: Colors.white),
@@ -180,7 +181,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                               CheckboxListTile(
                                 title: const Text('Aplicar 10% de descuento', style: TextStyle(color: Colors.white)),
                                 value: applyDiscount,
-                                activeColor: Colors.tealAccent,
+                                activeColor: AppColors.tertiary,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                 onChanged: (val) {
                                   setDialogState(() => applyDiscount = val ?? false);
@@ -204,7 +205,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                           CheckboxListTile(
                             title: const Text('Agregar vía texto', style: TextStyle(color: Colors.white)),
                             value: _useTextInput,
-                            activeColor: Colors.tealAccent,
+                            activeColor: AppColors.tertiary,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             onChanged: (val) {
                               setDialogState(() => _useTextInput = val ?? false);
@@ -230,7 +231,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(color: Colors.tealAccent),
+                                    borderSide: const BorderSide(color: AppColors.tertiary),
                                   ),
                                   filled: true,
                                   fillColor: Colors.white.withOpacity(0.02),
@@ -248,12 +249,12 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar', style: TextStyle(color: Colors.white70)),
+                  child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.tealAccent,
-                    foregroundColor: const Color(0xFF0B1222),
+                    backgroundColor: AppColors.tertiary,
+                    foregroundColor: AppColors.background,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
@@ -489,7 +490,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                   ),
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.close, color: Colors.white70),
+                                  icon: const Icon(Icons.close, color: AppColors.textSecondary),
                                   onPressed: () => Navigator.pop(context),
                                 )
                               ],
@@ -553,7 +554,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Moneda', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                      const Text('Moneda', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                                       const SizedBox(height: 8),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -565,7 +566,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                         child: DropdownButtonHideUnderline(
                                           child: DropdownButton<String>(
                                             value: priceCurrency,
-                                            dropdownColor: const Color(0xFF131D31),
+                                            dropdownColor: AppColors.surface,
                                             isExpanded: true,
                                             style: const TextStyle(color: Colors.white),
                                             items: const [
@@ -696,7 +697,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                           ? const SizedBox(
                                               width: 18, 
                                               height: 18, 
-                                              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white70))
+                                              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(AppColors.textSecondary))
                                             )
                                           : const Icon(Icons.upload_file_rounded),
                                         label: Text(uploading ? 'Subiendo...' : 'Subir'),
@@ -724,7 +725,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                               children: [
                                 const Text(
                                   'Tipo de Producto',
-                                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                                 ),
                                 const SizedBox(height: 8),
                                 Container(
@@ -738,7 +739,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                     child: DropdownButton<String>(
                                       value: selectedProductType,
                                       dropdownColor: const Color(0xFF151F36),
-                                      icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+                                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
                                       style: const TextStyle(color: Colors.white, fontSize: 15),
                                       isExpanded: true,
                                       items: <String>['Linea Blanca', 'Linea Gris', 'Electrodomésticos']
@@ -781,7 +782,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                 ),
                                 Switch(
                                   value: isArVisible,
-                                  activeColor: Colors.indigoAccent,
+                                  activeColor: AppColors.primary,
                                   inactiveThumbColor: Colors.white30,
                                   inactiveTrackColor: Colors.white12,
                                   onChanged: (bool value) {
@@ -851,7 +852,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF0B1222),
+                                foregroundColor: AppColors.background,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
@@ -884,11 +885,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           backgroundColor: const Color(0xFF151F36),
           title: const Text('Eliminar Producto', style: TextStyle(color: Colors.white)),
           content: Text('¿Está seguro de que desea eliminar "$name"? Esta acción no se puede deshacer.',
-              style: const TextStyle(color: Colors.white70)),
+              style: const TextStyle(color: AppColors.textSecondary)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+              child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -905,7 +906,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   _showErrorToast(result['message']);
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
               child: const Text('Eliminar'),
             )
           ],
@@ -922,11 +923,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           backgroundColor: const Color(0xFF151F36),
           title: const Text('Eliminar Productos Seleccionados', style: TextStyle(color: Colors.white)),
           content: Text('¿Está seguro de que desea eliminar los ${_selectedProductIds.length} productos seleccionados? Esta acción no se puede deshacer.',
-              style: const TextStyle(color: Colors.white70)),
+              style: const TextStyle(color: AppColors.textSecondary)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+              child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -943,7 +944,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   _showErrorToast(result['message']);
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
               child: const Text('Eliminar'),
             )
           ],
@@ -975,7 +976,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
 
   void _showErrorToast(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 
@@ -1001,7 +1002,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         labelStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
         hintText: hint,
         hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-        prefixIcon: icon != null ? Icon(icon, color: Colors.white54) : null,
+        prefixIcon: icon != null ? Icon(icon, color: AppColors.textMuted) : null,
         filled: true,
         fillColor: Colors.white.withOpacity(0.06),
         border: OutlineInputBorder(
@@ -1014,7 +1015,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.tealAccent),
+          borderSide: const BorderSide(color: AppColors.tertiary),
         ),
       ),
     );
@@ -1023,14 +1024,15 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1222),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'Inventario LogCoC',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF0B1222),
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
@@ -1045,7 +1047,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
         actions: [
           if (_selectedProductIds.isNotEmpty) ...[
             IconButton(
-              icon: const Icon(Icons.clear_all_rounded, color: Colors.white70),
+              icon: const Icon(Icons.clear_all_rounded, color: AppColors.textSecondary),
               tooltip: 'Deseleccionar todo',
               onPressed: () {
                 setState(() {
@@ -1060,7 +1062,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
             ),
           ],
           IconButton(
-            icon: const Icon(Icons.upload_file_rounded, color: Colors.tealAccent),
+            icon: const Icon(Icons.upload_file_rounded, color: AppColors.tertiary),
             tooltip: 'agregar varios',
             onPressed: _isImporting ? null : _showAddMultipleDialog,
           ),
@@ -1079,9 +1081,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0B1222),
-              Color(0xFF131D31),
-              Color(0xFF1B2A47),
+              AppColors.background,
+              AppColors.surface,
+              AppColors.surfaceLight,
             ],
           ),
         ),
@@ -1106,7 +1108,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showFormDialog(),
-        backgroundColor: Colors.indigoAccent,
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Nuevo Producto'),
@@ -1128,7 +1130,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
           decoration: InputDecoration(
             hintText: 'Buscar por QR, nombre o categoría...',
             hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-            prefixIcon: const Icon(Icons.search, color: Colors.white54),
+            prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
@@ -1143,7 +1145,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.cloud_off_rounded, size: 64, color: Colors.redAccent),
+          const Icon(Icons.cloud_off_rounded, size: 64, color: AppColors.error),
           const SizedBox(height: 16),
           Text(_error!, style: const TextStyle(color: Colors.white, fontSize: 16)),
           const SizedBox(height: 16),
@@ -1195,7 +1197,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 leading: Checkbox(
                   value: _selectedProductIds.contains(prod['id']),
-                  activeColor: Colors.indigoAccent,
+                  activeColor: AppColors.primary,
                   checkColor: Colors.white,
                   side: BorderSide(color: Colors.white.withOpacity(0.4)),
                   onChanged: (bool? val) {
@@ -1238,10 +1240,10 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.indigoAccent.withOpacity(0.2),
+                          color: AppColors.primary.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text('AR', style: TextStyle(color: Colors.indigoAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                        child: const Text('AR', style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold)),
                       ),
                   ],
                 ),
@@ -1256,7 +1258,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.edit_outlined, color: Colors.cyanAccent),
+                      icon: const Icon(Icons.edit_outlined, color: AppColors.secondary),
                       tooltip: 'Editar',
                       onPressed: () => _showFormDialog(product: prod),
                     ),

@@ -12,6 +12,7 @@ import 'features/catalog/screens/catalog_screen.dart';
 import 'features/chatbot/screens/chat_screen.dart';
 import 'features/qr/screens/qr_scanner_screen.dart';
 import 'features/products/screens/product_detail_screen.dart';
+import 'package:logw_front/core/theme/app_colors.dart';
 import 'core/utils/file_picker_stub.dart'
     if (dart.library.html) 'core/utils/file_picker_web_helper.dart';
 
@@ -35,7 +36,7 @@ class MyApp extends StatelessWidget {
           seedColor: Colors.indigo,
           brightness: Brightness.dark,
         ),
-        scaffoldBackgroundColor: const Color(0xFF0B1222),
+        scaffoldBackgroundColor: AppColors.background,
       ),
       onGenerateRoute: (settings) {
         final uri = Uri.parse(settings.name ?? '/');
@@ -173,7 +174,7 @@ class _AdminGuardState extends State<AdminGuard> {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.indigoAccent),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
         ),
       );

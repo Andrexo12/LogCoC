@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:logw_front/core/theme/app_colors.dart';
 
 class QrScannerScreen extends StatefulWidget {
   const QrScannerScreen({super.key});
@@ -101,7 +102,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                                 children: [
                                   const Icon(
                                     Icons.videocam_off_outlined,
-                                    color: Colors.redAccent,
+                                    color: AppColors.error,
                                     size: 64,
                                   ),
                                   const SizedBox(height: 16),
@@ -120,7 +121,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                                     '2. Cambia el permiso a "Permitir" o activa el interruptor.\n'
                                     '3. Recarga la página para volver a intentar.',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
@@ -147,11 +148,11 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                           width: 220,
                           height: 220,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.cyanAccent, width: 3),
+                            border: Border.all(color: AppColors.secondary, width: 3),
                             borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.cyanAccent.withOpacity(0.1),
+                                color: AppColors.secondary.withOpacity(0.1),
                                 blurRadius: 10,
                                 spreadRadius: 1,
                               )
@@ -192,7 +193,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                         const SizedBox(height: 4),
                         const Text(
                           'Ingresa el código QR o código de barras manualmente abajo.',
-                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -222,7 +223,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                               height: 52,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.cyanAccent,
+                                  backgroundColor: AppColors.secondary,
                                   foregroundColor: const Color(0xFF0F172A),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -268,8 +269,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: OutlinedButton(
           style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.cyanAccent,
-            side: const BorderSide(color: Colors.cyanAccent, width: 1),
+            foregroundColor: AppColors.secondary,
+            side: const BorderSide(color: AppColors.secondary, width: 1),
             padding: const EdgeInsets.symmetric(vertical: 10),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),

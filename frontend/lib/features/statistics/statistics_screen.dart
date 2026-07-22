@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/api_service.dart';
 import '../products/screens/product_detail_screen.dart';
+import 'package:logw_front/core/theme/app_colors.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -57,6 +58,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Dashboard de Estadísticas'),
         actions: [
           IconButton(
@@ -256,7 +258,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       barRods: [
                         BarChartRodData(
                           toY: entry.value['views'].toDouble(),
-                          color: Colors.blueAccent,
+                          color: AppColors.info,
                           width: 16,
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                         )
@@ -279,7 +281,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.search, size: 14, color: Colors.blueAccent),
+                        const Icon(Icons.search, size: 14, color: AppColors.info),
                         const SizedBox(width: 4),
                         Text(product['name'].toString().length > 15 
                           ? '${product['name'].toString().substring(0, 15)}...' 
@@ -425,7 +427,7 @@ class _ChatbotLogsDialogState extends State<_ChatbotLogsDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: const Color(0xFF131D31),
+      backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text('Consultas para: ${widget.intent.toUpperCase()}', style: const TextStyle(color: Colors.white)),
       content: SizedBox(
@@ -441,12 +443,12 @@ class _ChatbotLogsDialogState extends State<_ChatbotLogsDialog> {
                         ? const Center(child: CircularProgressIndicator())
                         : TextButton(
                             onPressed: _loadMore,
-                            child: const Text('Cargar más', style: TextStyle(color: Colors.tealAccent)),
+                            child: const Text('Cargar más', style: TextStyle(color: AppColors.tertiary)),
                           );
                   }
                   final log = _logs[index];
                   return ListTile(
-                    title: Text('"${log['query_text']}"', style: const TextStyle(color: Colors.white70)),
+                    title: Text('"${log['query_text']}"', style: const TextStyle(color: AppColors.textSecondary)),
                     subtitle: Text(log['timestamp'].toString().substring(0, 16).replaceFirst('T', ' '), style: const TextStyle(color: Colors.white38, fontSize: 12)),
                   );
                 },
@@ -455,7 +457,7 @@ class _ChatbotLogsDialogState extends State<_ChatbotLogsDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cerrar', style: TextStyle(color: Colors.white70)),
+          child: const Text('Cerrar', style: TextStyle(color: AppColors.textSecondary)),
         ),
       ],
     );

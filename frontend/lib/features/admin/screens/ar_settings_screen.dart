@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/api_service.dart';
+import 'package:logw_front/core/theme/app_colors.dart';
 
 class ARSettingsScreen extends StatefulWidget {
   const ARSettingsScreen({super.key});
@@ -61,7 +62,7 @@ class _ARSettingsScreenState extends State<ARSettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al actualizar $key: ${res['message'] ?? 'Desconocido'}'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -80,14 +81,15 @@ class _ARSettingsScreenState extends State<ARSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1222),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'Configuración AR',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF0B1222),
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),

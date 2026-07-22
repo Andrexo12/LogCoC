@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database.db import get_db
 from models.admin import ARSetting, AITraining
+from models.audit import ChatbotContext, ChatbotContextCreate, ChatbotContextResponse
 from typing import List, Dict
 from routes.auth import require_role
+from routes.audit import log_action
 
 router = APIRouter(prefix="/admin", tags=["Admin Settings"])
 
@@ -114,3 +116,66 @@ def train_bot_chat(data: Dict[str, str], db: Session = Depends(get_db), current_
     except Exception as e:
         print(f"Error entrenando bot: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/chatbot-contexts", response_model=List[ChatbotContextResponse])
+def get_chatbot_contexts(db: Session = Depends(get_db), current_user = Depends(require_role("admin"))):
+    from models.user import User
+    contexts = db.query(ChatbotContext, User).outerjoin(User, ChatbotContext.created_by == User.id).order_by(ChatbotContext.created_at.desc()).all()
+    result = []
+    for ctx, user in contexts:
+        ctx_dict = ctx.__dict__.copy()
+        if user:
+            name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+            ctx_dict["user_name"] = name if name else user.email
+        else:
+            ctx_dict["user_name"] = "Desconocido"
+        # Format dates as strings to satisfy Pydantic if needed
+        if ctx_dict.get("created_at"): ctx_dict["created_at"] = ctx_dict["created_at"].isoformat()
+        if ctx_dict.get("updated_at"): ctx_dict["updated_at"] = ctx_dict["updated_at"].isoformat()
+        result.append(ctx_dict)
+    return result
+
+@router.post("/chatbot-contexts", response_model=ChatbotContextResponse)
+def create_chatbot_context(data: ChatbotContextCreate, db: Session = Depends(get_db), current_user = Depends(require_role("admin"))):
+    new_ctx = ChatbotContext(context_text=data.context_text, created_by=current_user.id)
+    db.add(new_ctx)
+    db.commit()
+    db.refresh(new_ctx)
+    log_action(db, current_user.id, "CREAR_CONTEXTO", "Chatbot", "Se agregó un nuevo contexto al chatbot")
+    
+    ctx_dict = new_ctx.__dict__.copy()
+    name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip()
+    ctx_dict["user_name"] = name if name else current_user.email
+    if ctx_dict.get("created_at"): ctx_dict["created_at"] = ctx_dict["created_at"].isoformat()
+    if ctx_dict.get("updated_at"): ctx_dict["updated_at"] = ctx_dict["updated_at"].isoformat()
+    return ctx_dict
+
+@router.put("/chatbot-contexts/{ctx_id}", response_model=ChatbotContextResponse)
+def update_chatbot_context(ctx_id: int, data: ChatbotContextCreate, db: Session = Depends(get_db), current_user = Depends(require_role("admin"))):
+    ctx = db.query(ChatbotContext).filter(ChatbotContext.id == ctx_id).first()
+    if not ctx:
+        raise HTTPException(status_code=404, detail="Contexto no encontrado")
+    
+    ctx.context_text = data.context_text
+    ctx.created_by = current_user.id  # Update who last modified it, or keep original? Update it.
+    db.commit()
+    db.refresh(ctx)
+    log_action(db, current_user.id, "EDITAR_CONTEXTO", "Chatbot", f"Se editó el contexto ID: {ctx_id}")
+    
+    ctx_dict = ctx.__dict__.copy()
+    name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip()
+    ctx_dict["user_name"] = name if name else current_user.email
+    if ctx_dict.get("created_at"): ctx_dict["created_at"] = ctx_dict["created_at"].isoformat()
+    if ctx_dict.get("updated_at"): ctx_dict["updated_at"] = ctx_dict["updated_at"].isoformat()
+    return ctx_dict
+
+@router.delete("/chatbot-contexts/{ctx_id}")
+def delete_chatbot_context(ctx_id: int, db: Session = Depends(get_db), current_user = Depends(require_role("admin"))):
+    ctx = db.query(ChatbotContext).filter(ChatbotContext.id == ctx_id).first()
+    if not ctx:
+        raise HTTPException(status_code=404, detail="Contexto no encontrado")
+    
+    db.delete(ctx)
+    db.commit()
+    log_action(db, current_user.id, "ELIMINAR_CONTEXTO", "Chatbot", f"Se eliminó el contexto ID: {ctx_id}")
+    return {"success": True, "message": "Contexto eliminado"}

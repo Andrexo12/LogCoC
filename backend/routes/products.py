@@ -165,6 +165,9 @@ def create_product(
             from routes.import_products import update_product_images_background
             background_tasks.add_task(update_product_images_background, [product.id])
             
+    from routes.audit import log_action
+    log_action(db, current_user.id, "CREAR_PRODUCTO", product.name, f"Se creó el producto con QR {product.qr_id}")
+            
     return rewrite_image_url(product_to_dict(product), request)
 
 @router.put("/{product_id}", response_model=ProductSchema)
@@ -185,6 +188,9 @@ def update_product(
             from routes.import_products import update_product_images_background
             background_tasks.add_task(update_product_images_background, [product.id])
             
+    from routes.audit import log_action
+    log_action(db, current_user.id, "ACTUALIZAR_PRODUCTO", product.name, f"Se actualizó el producto con QR {product.qr_id}")
+            
     return rewrite_image_url(product_to_dict(product), request)
 
 @router.delete("/{product_id}")
@@ -192,5 +198,9 @@ def delete_product(product_id: int, db: Session = Depends(get_db), current_user 
     success = ProductService.delete_product(db, product_id)
     if not success:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
+        
+    from routes.audit import log_action
+    log_action(db, current_user.id, "ELIMINAR_PRODUCTO", f"ID: {product_id}", "Se eliminó un producto")
+        
     return {"message": "Producto eliminado con éxito"}
 

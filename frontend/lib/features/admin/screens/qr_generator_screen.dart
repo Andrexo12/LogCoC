@@ -2,6 +2,7 @@ import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/api_service.dart';
+import 'package:logw_front/core/theme/app_colors.dart';
 
 class QrGeneratorScreen extends StatefulWidget {
   const QrGeneratorScreen({super.key});
@@ -129,7 +130,7 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
               sigmaY: 8,
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_outline, color: Colors.tealAccent, size: 24),
+                  const Icon(Icons.check_circle_outline, color: AppColors.tertiary, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -160,12 +161,13 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'Generador de Códigos QR',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF0B1222).withOpacity(0.7),
+        backgroundColor: AppColors.background.withOpacity(0.7),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
@@ -204,14 +206,14 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                         const SizedBox(height: 20),
                         
                         // Target Type Dropdown
-                        const Text('Tipo de Destino', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                        const Text('Tipo de Destino', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                         const SizedBox(height: 8),
                         _dropdownContainer(
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _selectedTargetType,
                               dropdownColor: const Color(0xFF151F36),
-                              icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+                              icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
                               style: const TextStyle(color: Colors.white, fontSize: 15),
                               isExpanded: true,
                               items: const [
@@ -235,7 +237,7 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
 
                         // Sub-options based on Target Type
                         if (_selectedTargetType == 'Producto') ...[
-                          const Text('Seleccionar Producto', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                          const Text('Seleccionar Producto', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                           const SizedBox(height: 8),
                           _isLoadingProducts
                               ? const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(color: Colors.white)))
@@ -244,7 +246,7 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                                     child: DropdownButton<Map<String, dynamic>>(
                                       value: _selectedProduct,
                                       dropdownColor: const Color(0xFF151F36),
-                                      icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+                                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
                                       style: const TextStyle(color: Colors.white, fontSize: 15),
                                       isExpanded: true,
                                       items: _products.map<DropdownMenuItem<Map<String, dynamic>>>((prod) {
@@ -265,14 +267,14 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                                   ),
                                 ),
                         ] else if (_selectedTargetType == 'Catalogo') ...[
-                          const Text('Seleccionar Categoría', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                          const Text('Seleccionar Categoría', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                           const SizedBox(height: 8),
                           _dropdownContainer(
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _selectedCatalogCategory,
                                 dropdownColor: const Color(0xFF151F36),
-                                icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+                                icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
                                 style: const TextStyle(color: Colors.white, fontSize: 15),
                                 isExpanded: true,
                                 items: _categories.map<DropdownMenuItem<String>>((String value) {
@@ -293,7 +295,7 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                             ),
                           ),
                         ] else if (_selectedTargetType == 'Personalizado') ...[
-                          const Text('Enlace URL Completo', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                          const Text('Enlace URL Completo', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                           const SizedBox(height: 8),
                           TextField(
                             controller: _customUrlController,
@@ -314,7 +316,7 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(color: Colors.indigoAccent, width: 1.5),
+                                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
                               ),
                             ),
                           ),
@@ -431,7 +433,7 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
                                 label: const Text('Copiar QR Img'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  foregroundColor: const Color(0xFF0B1222),
+                                  foregroundColor: AppColors.background,
                                   padding: const EdgeInsets.symmetric(vertical: 14),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),
@@ -492,9 +494,9 @@ class _QrGeneratorScreenState extends State<QrGeneratorScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0B1222),
-              Color(0xFF131D31),
-              Color(0xFF1B2A47),
+              AppColors.background,
+              AppColors.surface,
+              AppColors.surfaceLight,
             ],
           ),
         ),

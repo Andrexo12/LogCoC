@@ -2,6 +2,7 @@ import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/api_service.dart';
+import 'package:logw_front/core/theme/app_colors.dart';
 
 class CatalogScreen extends StatefulWidget {
   final String? initialCategory;
@@ -116,7 +117,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
               sigmaY: 8,
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_outline, color: Colors.tealAccent, size: 24),
+                  const Icon(Icons.check_circle_outline, color: AppColors.tertiary, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -229,10 +230,10 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   decoration: InputDecoration(
                     hintText: 'Buscar por nombre, tipo o marca...',
                     hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                    prefixIcon: const Icon(Icons.search, color: AppColors.textMuted),
                     suffixIcon: searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: Colors.white54),
+                            icon: const Icon(Icons.clear, color: AppColors.textMuted),
                             onPressed: () {
                               setState(() {
                                 searchQuery = '';
@@ -268,7 +269,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     selectedColor: Colors.white.withOpacity(0.9),
                     backgroundColor: Colors.white.withOpacity(0.06),
                     labelStyle: TextStyle(
-                      color: isSelected ? const Color(0xFF0B1222) : Colors.white70,
+                      color: isSelected ? AppColors.background : AppColors.textSecondary,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
                     shape: RoundedRectangleBorder(
@@ -390,7 +391,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                   errorBuilder: (context, error, stackTrace) => const Icon(
                                     Icons.inventory_2_outlined,
                                     size: 38,
-                                    color: Colors.white70,
+                                    color: AppColors.textSecondary,
                                   ),
                                   loadingBuilder: (context, child, loadingProgress) {
                                     if (loadingProgress == null) return child;
@@ -405,7 +406,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             : const Icon(
                                 Icons.inventory_2_outlined,
                                 size: 38,
-                                color: Colors.white70,
+                                color: AppColors.textSecondary,
                               ),
                       ),
                     ),
@@ -425,7 +426,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           category,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 9, fontWeight: FontWeight.bold),
                         ),
                       ),
                       if (isAr) ...[
@@ -433,12 +434,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
                           decoration: BoxDecoration(
-                            color: Colors.indigoAccent.withOpacity(0.2),
+                            color: AppColors.primary.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: const Text(
                             'AR',
-                            style: TextStyle(color: Colors.indigoAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ]
@@ -466,7 +467,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                         width: 6,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: stock > 0 ? Colors.tealAccent : Colors.redAccent,
+                          color: stock > 0 ? AppColors.tertiary : AppColors.error,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -496,7 +497,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       Text(
                         'Precio: ${displayBs.toStringAsFixed(2)}',
                         style: const TextStyle(
-                          color: Colors.tealAccent,
+                          color: AppColors.tertiary,
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
@@ -518,9 +519,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0B1222),
-              Color(0xFF131D31),
-              Color(0xFF1B2A47),
+              AppColors.background,
+              AppColors.surface,
+              AppColors.surfaceLight,
             ],
           ),
         ),

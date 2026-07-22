@@ -4,6 +4,7 @@ from database.db import get_db
 from services.chatbot_service import ChatbotService
 from services.product_service import ProductService
 from models.admin import AITraining
+from models.audit import ChatbotContext
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/chatbot", tags=["Chatbot"])
@@ -18,15 +19,22 @@ async def ask_bot(request: ChatRequest, db: Session = Depends(get_db)):
     # 1. Obtener datos de entrenamiento de la base de datos (FAQs y Contexto General)
     training_rows = db.query(AITraining).all()
     faqs = []
-    general_context = ""
+    
+    # 1.b Obtener los contextos agregados manualmente
+    context_rows = db.query(ChatbotContext).all()
+    general_context_lines = []
+    for ctx in context_rows:
+        general_context_lines.append(ctx.context_text)
+        
     for r in training_rows:
         if r.category == 'general_context':
-            general_context = r.answer
+            general_context_lines.append(r.answer)
         elif r.category == 'campaign_percentage':
             continue # Opcional: manejar porcentaje aparte si se desea
         else:
             faqs.append(f"Q: {r.question} A: {r.answer}")
 
+    general_context = "\n".join(general_context_lines)
     training_context = "\n".join(faqs)
 
     # 2. Obtener catálogo completo de productos

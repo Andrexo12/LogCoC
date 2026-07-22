@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../../home/screens/dashboard_screen.dart';
 import '../../admin/screens/admin_dashboard.dart';
+import 'package:logw_front/core/theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool isFromAdmin;
@@ -13,23 +14,48 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true, _rememberMe = true, _isLoading = false;
+  bool _isLogin = true; // Toggle between Login and Register
   final _emailController = TextEditingController(),
-      _passController = TextEditingController();
+      _passController = TextEditingController(),
+      _firstNameController = TextEditingController(),
+      _lastNameController = TextEditingController();
   final _authService = AuthService();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
+  Future<void> _handleAuth() async {
     final email = _emailController.text.trim();
     final password = _passController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showMsg('Por favor rellena todos los campos');
+      _showMsg('Por favor rellena todos los campos requeridos');
+      return;
+    }
+    
+    if (!_isLogin) {
+      final firstName = _firstNameController.text.trim();
+      final lastName = _lastNameController.text.trim();
+      if (firstName.isEmpty || lastName.isEmpty) {
+        _showMsg('Por favor introduce tu nombre y apellido');
+        return;
+      }
+      setState(() => _isLoading = true);
+      final result = await _authService.register(firstName, lastName, email, password);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      if (result['success']) {
+        _showMsg(result['message'] ?? 'Registro exitoso. Espera aprobación.');
+        setState(() => _isLogin = true); // Vuelve a login
+      } else {
+        _showMsg('Error: ${result['message']}');
+      }
       return;
     }
 
@@ -45,15 +71,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       
       final String role = result['role'] ?? 'scanner';
-      print('DEBUG LOGIN: Role returned: $role, isFromAdmin: ${widget.isFromAdmin}');
       
-      // Si el rol es admin, SIEMPRE va al AdminDashboard
-      // Si venía de la ruta /admin (isFromAdmin), también va al AdminDashboard (para que lo bloquee el propio AdminDashboard si no es admin)
       if (role == 'admin' || widget.isFromAdmin) {
-        print('DEBUG LOGIN: Redirecting to AdminDashboard');
         Navigator.pushReplacementNamed(context, '/admin');
       } else {
-        print('DEBUG LOGIN: Redirecting to DashboardScreen');
         Navigator.pushReplacementNamed(context, '/');
       }
     } else {
@@ -130,24 +151,30 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const SizedBox(height: 12),
-                          const Text(
-                            'Iniciar Sesión',
-                            style: TextStyle(
+                          Text(
+                            _isLogin ? 'Iniciar Sesión' : 'Registro de Admin',
+                            style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 42,
+                              fontSize: 32,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: 10),
-                          const Text(
-                            'BIENVENIDO DE NUEVO, INICIA SESIÓN EN TU CUENTA',
-                            style: TextStyle(
+                          Text(
+                            _isLogin ? 'BIENVENIDO DE NUEVO' : 'CREA TU CUENTA PARA ADMINISTRAR',
+                            style: const TextStyle(
                               color: Color.fromRGBO(255, 255, 255, 0.72),
                               fontSize: 12,
                               letterSpacing: 1.1,
                             ),
                           ),
                           const SizedBox(height: 32),
+                          if (!_isLogin) ...[
+                            _buildTextField('Nombre', Icons.person_outline, _firstNameController, false),
+                            const SizedBox(height: 18),
+                            _buildTextField('Apellido', Icons.person_outline, _lastNameController, false),
+                            const SizedBox(height: 18),
+                          ],
                           _buildTextField(
                             'Email',
                             Icons.email_outlined,
@@ -168,60 +195,57 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                           ),
-                          const SizedBox(height: 20),
-                          Row(
-                            children: [
-                              GestureDetector(
-                                onTap: () =>
-                                    setState(() => _rememberMe = !_rememberMe),
-                                child: Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: _rememberMe
-                                        ? Colors.white
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: Colors.white70,
-                                      width: 1.2,
+                          if (_isLogin) ...[
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _rememberMe = !_rememberMe),
+                                  child: Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color: _rememberMe
+                                          ? Colors.white
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: AppColors.textSecondary,
+                                        width: 1.2,
+                                      ),
                                     ),
+                                    child: _rememberMe
+                                        ? const Icon(
+                                            Icons.check,
+                                            size: 18,
+                                            color: AppColors.background,
+                                          )
+                                        : null,
                                   ),
-                                  child: _rememberMe
-                                      ? const Icon(
-                                          Icons.check,
-                                          size: 18,
-                                          color: Color(0xFF0B1222),
-                                        )
-                                      : null,
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'Recordarme',
-                                style: TextStyle(
-                                  color: Color.fromRGBO(255, 255, 255, 0.87),
-                                  fontSize: 14,
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'Recordarme',
+                                  style: TextStyle(
+                                    color: Color.fromRGBO(255, 255, 255, 0.87),
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: 24),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(
-                                255,
-                                255,
-                                255,
-                                0.9,
-                              ),
-                              foregroundColor: const Color(0xFF0B1222),
+                              backgroundColor: const Color.fromRGBO(255, 255, 255, 0.9),
+                              foregroundColor: AppColors.background,
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
                             ),
-                            onPressed: _isLoading ? null : _handleLogin,
+                            onPressed: _isLoading ? null : _handleAuth,
                             child: _isLoading
                                 ? const SizedBox(
                                     height: 20,
@@ -229,17 +253,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        Color(0xFF0B1222),
+                                        AppColors.background,
                                       ),
                                     ),
                                   )
-                                : const Text(
-                                    'Entrar',
-                                    style: TextStyle(
+                                : Text(
+                                    _isLogin ? 'Entrar' : 'Registrarse',
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextButton(
+                            onPressed: () {
+                              setState(() => _isLogin = !_isLogin);
+                            },
+                            child: Text(
+                              _isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia Sesión',
+                              style: const TextStyle(color: Colors.white70),
+                            ),
                           ),
                         ],
                       ),
@@ -329,7 +363,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF0B1222), Color(0xFF151F36)],
+            colors: [AppColors.background, Color(0xFF151F36)],
           ),
         ),
       ),

@@ -38,13 +38,19 @@ def require_role(required_role: str):
         return current_user
     return dependency
 
+def require_admin(current_user: User = Depends(require_role("admin"))):
+    return current_user
+
 @router.post("/register")
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
     hashed_pwd = AuthService.hash_password(user_data.password)
     new_user = User(
         email=user_data.email,
         password_hash=hashed_pwd,
-        role=user_data.role
+        first_name=user_data.first_name,
+        last_name=user_data.last_name,
+        role=user_data.role,
+        status="pending"
     )
     db.add(new_user)
     try:
@@ -66,6 +72,9 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     
     if not user or not AuthService.verify_password(credentials.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        
+    if user.status == "pending":
+        raise HTTPException(status_code=403, detail="Tu cuenta está pendiente de aprobación por un administrador.")
     
     token_data = {"sub": user.email, "role": user.role}
     token = AuthService.create_access_token(data=token_data)
@@ -75,7 +84,10 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "user": {
             "email": user.email,
-            "role": user.role
+            "role": user.role,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "status": user.status
         }
     }
 
@@ -97,8 +109,39 @@ def forgot_password(email: str, db: Session = Depends(get_db)):
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):
     return {
+        "id": current_user.id,
         "email": current_user.email,
         "role": current_user.role,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
         "rol": current_user.role,
-        "status": "verificado"
+        "status": current_user.status
     }
+
+@router.get("/pending-users")
+def get_pending_users(current_user: User = Depends(require_admin), db: Session = Depends(get_db)):
+    users = db.query(User).filter(User.status == "pending").all()
+    return [
+        {
+            "id": u.id,
+            "email": u.email,
+            "first_name": u.first_name,
+            "last_name": u.last_name,
+            "role": u.role,
+            "created_at": u.created_at
+        } for u in users
+    ]
+
+@router.post("/approve-user/{user_id}")
+def approve_user(user_id: int, current_user: User = Depends(require_admin), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    user.status = "approved"
+    db.commit()
+    
+    # Simulate sending email
+    print(f"ENVIANDO CORREO a {user.email}: ¡Has sido aprobado como administrador en LogCoC!")
+    
+    return {"success": True, "message": "Usuario aprobado correctamente"}

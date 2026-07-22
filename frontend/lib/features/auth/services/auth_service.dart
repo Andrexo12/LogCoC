@@ -58,4 +58,61 @@ class AuthService {
     await prefs.remove('user_role');
     await prefs.remove('user_email');
   }
+
+  Future<Map<String, dynamic>> register(String firstName, String lastName, String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'first_name': firstName,
+          'last_name': lastName,
+          'email': email,
+          'password': password,
+          'role': 'admin' // Piden registrar administradores para aprobarlos
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, 'message': 'Registrado con éxito. Espera aprobación.'};
+      } else {
+        return {'success': false, 'message': data['detail'] ?? 'Error desconocido'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
+  Future<List<dynamic>> getPendingUsers() async {
+    try {
+      final token = await getToken();
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/pending-users'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      print('Error al cargar usuarios pendientes: $e');
+      return [];
+    }
+  }
+
+  Future<bool> approveUser(int userId) async {
+    try {
+      final token = await getToken();
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/approve-user/$userId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error al aprobar usuario: $e');
+      return false;
+    }
+  }
 }

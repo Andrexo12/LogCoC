@@ -227,6 +227,91 @@ class ApiService {
     return [];
   }
 
+  Future<List<dynamic>> getChatbotContexts() async {
+    final token = await _getToken();
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/admin/chatbot-contexts'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      print('Error al obtener contextos de IA: $e');
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>> addChatbotContext(String contextText) async {
+    final token = await _getToken();
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/admin/chatbot-contexts'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'context_text': contextText,
+        }),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {'success': true, 'message': 'Guardado con éxito'};
+      } else {
+        return {'success': false, 'message': 'Error del servidor: ${response.statusCode}'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateChatbotContext(int id, String contextText) async {
+    final token = await _getToken();
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/admin/chatbot-contexts/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'context_text': contextText,
+        }),
+      );
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': 'Actualizado con éxito'};
+      } else {
+        return {'success': false, 'message': 'Error del servidor: ${response.statusCode}'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteChatbotContext(int id) async {
+    final token = await _getToken();
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/admin/chatbot-contexts/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': 'Eliminado con éxito'};
+      } else {
+        return {'success': false, 'message': 'Error del servidor: ${response.statusCode}'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión: $e'};
+    }
+  }
+
   Future<Map<String, dynamic>> addAITraining(String question, String answer, {String category = 'general'}) async {
     final token = await _getToken();
     try {

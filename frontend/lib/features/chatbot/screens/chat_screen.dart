@@ -1,6 +1,7 @@
 import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import '../../../core/api_service.dart';
+import 'package:logw_front/core/theme/app_colors.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? productContextId;
@@ -68,12 +69,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   width: 8,
                   height: 8,
                   decoration: const BoxDecoration(
-                    color: Colors.greenAccent,
+                    color: AppColors.success,
                     shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 6),
-                const Text('En línea', style: TextStyle(fontSize: 11, color: Colors.greenAccent, fontWeight: FontWeight.w500)),
+                const Text('En línea', style: TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w500)),
               ],
             ),
           ],
@@ -128,13 +129,13 @@ class _ChatScreenState extends State<ChatScreen> {
                               height: 14,
                               child: CircularProgressIndicator(
                                 strokeWidth: 1.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.cyanAccent),
+                                valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondary),
                               ),
                             ),
                             SizedBox(width: 10),
                             Text(
                               'El asesor está escribiendo...',
-                              style: TextStyle(fontStyle: FontStyle.italic, color: Colors.white54, fontSize: 12),
+                              style: TextStyle(fontStyle: FontStyle.italic, color: AppColors.textMuted, fontSize: 12),
                             ),
                           ],
                         ),
@@ -157,7 +158,7 @@ class _ChatScreenState extends State<ChatScreen> {
         margin: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: isMe 
-              ? Colors.indigoAccent.withOpacity(0.2) 
+              ? AppColors.primary.withOpacity(0.2) 
               : Colors.white.withOpacity(0.06),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
@@ -167,7 +168,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           border: Border.all(
             color: isMe 
-                ? Colors.indigoAccent.withOpacity(0.3) 
+                ? AppColors.primary.withOpacity(0.3) 
                 : Colors.white.withOpacity(0.12),
             width: 1,
           ),
@@ -249,9 +250,9 @@ class _ChatScreenState extends State<ChatScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0B1222),
-              Color(0xFF131D31),
-              Color(0xFF1B2A47),
+              AppColors.background,
+              AppColors.surface,
+              AppColors.surfaceLight,
             ],
           ),
         ),

@@ -2,6 +2,7 @@ import '../../../widgets/glass_effect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/api_service.dart';
+import 'package:logw_front/core/theme/app_colors.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String qrId;
@@ -70,7 +71,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               sigmaY: 8,
               child: const Row(
                 children: [
-                  Icon(Icons.check_circle_outline, color: Colors.tealAccent, size: 24),
+                  Icon(Icons.check_circle_outline, color: AppColors.tertiary, size: 24),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -107,7 +108,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             letterSpacing: 1.1,
           ),
         ),
-        backgroundColor: const Color(0xFF0B1222).withOpacity(0.7),
+        backgroundColor: AppColors.background.withOpacity(0.7),
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
@@ -205,7 +206,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline_rounded, size: 80, color: Colors.redAccent),
+                const Icon(Icons.error_outline_rounded, size: 80, color: AppColors.error),
                 const SizedBox(height: 20),
                 Text(
                   _error ?? 'Producto no encontrado',
@@ -223,7 +224,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF0B1222),
+                    foregroundColor: AppColors.background,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -307,7 +308,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 _badge(productType.toUpperCase(), Colors.white12),
                 if (isAr) ...[
                   const SizedBox(width: 8),
-                  _badge('AR COMPATIBLE', Colors.indigoAccent.withOpacity(0.3)),
+                  _badge('AR COMPATIBLE', AppColors.primary.withOpacity(0.3)),
                 ]
               ],
             ),
@@ -332,7 +333,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   width: 10,
                   height: 10,
                   decoration: BoxDecoration(
-                    color: stock > 0 ? Colors.tealAccent : Colors.redAccent,
+                    color: stock > 0 ? AppColors.tertiary : AppColors.error,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -460,7 +461,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     const Text(
                       'PRECIO INNOVA CENTER',
                       style: TextStyle(
-                        color: Colors.indigoAccent,
+                        color: AppColors.primary,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
@@ -491,9 +492,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0B1222),
-              Color(0xFF131D31),
-              Color(0xFF1B2A47),
+              AppColors.background,
+              AppColors.surface,
+              AppColors.surfaceLight,
             ],
           ),
         ),
