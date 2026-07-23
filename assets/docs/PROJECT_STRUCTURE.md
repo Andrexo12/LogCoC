@@ -14,7 +14,6 @@ Esta guía describe **cada carpeta y archivo** presente en la raíz del proyecto
 | `assets` | Recursos estáticos usados por la aplicación (imágenes, fuentes, iconos, etc.). |
 | `backend` | **Backend** en Python (FastAPI). Contiene la lógica del servidor, rutas API, modelos y migraciones. |
 | `frontend` | **Frontend** en Flutter (Web/Móvil). Código UI, servicios de red y recursos UI. |
-| `frontend-sdk` *(si existe)* | SDK o componentes reutilizables para el frontend. |
 
 ---
 
@@ -29,9 +28,6 @@ Esta guía describe **cada carpeta y archivo** presente en la raíz del proyecto
 | `docker-compose.yml` | YAML | Configuración de Docker para levantar la base de datos MariaDB y otros servicios. |
 | `requirements.txt` | Texto | Lista de dependencias Python del backend. |
 | `skills-lock.json` | JSON | Bloqueo de versiones de habilidades personalizadas de Antigravity. |
-| `implementation_plan.md` | Markdown | Plan de implementación, hitos y tareas pendientes. |
-| `run_app.ps1` | PowerShell | Script para iniciar simultáneamente backend y frontend en Windows. |
-| `setup_test_users.py` | Python | Script para crear usuarios de prueba en la base de datos. |
 
 ---
 

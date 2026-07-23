@@ -43,13 +43,22 @@ def require_admin(current_user: User = Depends(require_role("admin"))):
 
 @router.post("/register")
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    from models.lookup import Role
     hashed_pwd = AuthService.hash_password(user_data.password)
+    
+    role = db.query(Role).filter_by(nombre=user_data.role).first()
+    if not role:
+        role = Role(nombre=user_data.role)
+        db.add(role)
+        db.commit()
+        db.refresh(role)
+        
     new_user = User(
         email=user_data.email,
         password_hash=hashed_pwd,
         first_name=user_data.first_name,
         last_name=user_data.last_name,
-        role=user_data.role,
+        role_id=role.id,
         status="pending"
     )
     db.add(new_user)

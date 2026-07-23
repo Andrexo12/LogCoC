@@ -17,16 +17,12 @@ Este documento describe **todos los archivos y carpetas** dentro del directorio 
 | `app/` | Directorio | Código fuente principal del proyecto (útil cuando se usa `app.main`). |
 | `backend.log` / `backend_log.txt` | Texto | Log de ejecución del servidor. |
 | `database/` | Directorio | Configuración y utilidad de conexión a MariaDB. |
-| `database_docs/` | Directorio | Documentación interna de la capa de datos. |
-| `fill_missing_images.py` | Python | Script de utilidad para completar imágenes faltantes en los productos. |
-| `init_cloud_db.py` | Python | Inicializa la base de datos en la nube (crea tablas, seeds). |
+| `database_docs/` | Directorio | Documentación interna de la capa de datos y script inicial SQL. |
 | `main.py` | Python | **Punto de entrada** del API (`uvicorn main:app`). |
 | `models/` | Directorio | Definiciones ORM con SQLAlchemy y esquemas Pydantic (usuarios, productos, etc.). |
 | `routes/` | Directorio | Módulos de rutas API (`auth.py`, `products.py`, `chatbot.py`, …). Cada archivo expone endpoints FastAPI. |
 | `services/` | Directorio | Lógica de negocio separada de las rutas (autenticación, procesamiento de Excel, IA, etc.). |
-| `static/` | Directorio | Archivos estáticos servidos por FastAPI (ej. HTML de pruebas). |
-| `test_*.py` | Python | Tests unitarios y de integración (pytest). Incluye pruebas de API, lógica de búsqueda, etc. |
-| `brave_response.html`, `response_curl.html`, `yandex_response.html` | HTML | Respuestas de ejemplo de distintas APIs de búsqueda usadas en pruebas. |
+| `static/` | Directorio | Archivos estáticos servidos por FastAPI. |
 
 ---
 

@@ -5,23 +5,23 @@ from pydantic import BaseModel
 from typing import Optional
 
 class AuditLog(Base):
-    __tablename__ = "audit_logs"
+    __tablename__ = "auditoria"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    action = Column(String(255), nullable=False)
-    target = Column(String(255), nullable=False)
-    changes = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id = Column("id", Integer, primary_key=True, index=True)
+    user_id = Column("id_usuario", Integer, ForeignKey("usuarios.id"), nullable=True)
+    action = Column("accion", String(255), nullable=False)
+    target = Column("objetivo", String(255), nullable=False)
+    changes = Column("cambios", Text, nullable=True)
+    created_at = Column("fecha_hora", DateTime(timezone=True), server_default=func.now())
 
 class ChatbotContext(Base):
-    __tablename__ = "chatbot_contexts"
+    __tablename__ = "contexto_chatbot"
 
-    id = Column(Integer, primary_key=True, index=True)
-    context_text = Column(Text, nullable=False)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    id = Column("id", Integer, primary_key=True, index=True)
+    context_text = Column("texto_contexto", Text, nullable=False)
+    created_by = Column("creado_por", Integer, ForeignKey("usuarios.id"), nullable=True)
+    created_at = Column("fecha_creacion", DateTime(timezone=True), server_default=func.now())
+    updated_at = Column("fecha_actualizacion", DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 class ChatbotContextBase(BaseModel):
     context_text: str

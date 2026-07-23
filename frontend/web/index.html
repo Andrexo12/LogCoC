@@ -32,12 +32,72 @@
   <title>logw_front</title>
   <link rel="manifest" href="manifest.json">
   
-  <!-- Deshabilitar caché en desarrollo -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
+  <!-- Optimizaciones de carga y caché -->
+  <meta http-equiv="Cache-Control" content="max-age=31536000" />
+  
+  <style>
+    body {
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .loader-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Animación de Spinner */
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(0, 123, 255, 0.2);
+      border-radius: 50%;
+      border-top-color: #007bff;
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: #333;
+      font-size: 1.2rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+  </style>
 </head>
 <body>
+  <!-- Pantalla de carga nativa (desaparece cuando Flutter inyecta la app) -->
+  <div id="loading" class="loader-container">
+    <div class="spinner"></div>
+    <div class="loading-text">Cargando LogCoC...</div>
+  </div>
+
+  <script>
+    window.addEventListener('load', function(ev) {
+      // flutter_bootstrap.js initializes the app automatically
+      // Once the app is ready, flutter will replace the body contents or cover it,
+      // but we can also manually hide the loader if needed.
+    });
+  </script>
+  
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

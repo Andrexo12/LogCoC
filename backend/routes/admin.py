@@ -25,28 +25,28 @@ def toggle_ar_setting(section_name: str, is_enabled: bool, db: Session = Depends
 
 @router.post("/ai-training")
 def add_ai_training(data: Dict[str, str], db: Session = Depends(get_db), current_user = Depends(require_role("admin"))):
-    category = data.get("category", "general")
+    from models.lookup import CategoriaIA
+    category_name = data.get("category", "general")
     question = data.get("question", "")
     answer = data.get("answer", "")
 
-    if category == "general_context":
-        item = db.query(AITraining).filter(AITraining.category == "general_context").first()
+    cat = db.query(CategoriaIA).filter_by(nombre=category_name).first()
+    if not cat:
+        cat = CategoriaIA(nombre=category_name)
+        db.add(cat)
+        db.commit()
+        db.refresh(cat)
+
+    if category_name in ["general_context", "campaign_percentage"]:
+        item = db.query(AITraining).join(CategoriaIA).filter(CategoriaIA.nombre == category_name).first()
         if item:
             item.answer = answer
             item.question = question
         else:
-            item = AITraining(question=question, answer=answer, category="general_context")
-            db.add(item)
-    elif category == "campaign_percentage":
-        item = db.query(AITraining).filter(AITraining.category == "campaign_percentage").first()
-        if item:
-            item.answer = answer
-            item.question = question
-        else:
-            item = AITraining(question=question, answer=answer, category="campaign_percentage")
+            item = AITraining(question=question, answer=answer, category_id=cat.id)
             db.add(item)
     else:
-        item = AITraining(question=question, answer=answer, category=category)
+        item = AITraining(question=question, answer=answer, category_id=cat.id)
         db.add(item)
     
     db.commit()
@@ -68,11 +68,19 @@ def delete_ai_training(item_id: int, db: Session = Depends(get_db), current_user
 
 @router.post("/ai-training/chat")
 def train_bot_chat(data: Dict[str, str], db: Session = Depends(get_db), current_user = Depends(require_role("admin"))):
+    from models.lookup import CategoriaIA
     instruction = data.get("instruction", "")
     if not instruction:
         raise HTTPException(status_code=400, detail="Falta instrucción")
 
-    item = db.query(AITraining).filter(AITraining.category == "general_context").first()
+    cat = db.query(CategoriaIA).filter_by(nombre="general_context").first()
+    if not cat:
+        cat = CategoriaIA(nombre="general_context")
+        db.add(cat)
+        db.commit()
+        db.refresh(cat)
+
+    item = db.query(AITraining).join(CategoriaIA).filter(CategoriaIA.nombre == "general_context").first()
     current_context = item.answer if item else "Innova Center es una tienda de tecnología."
 
     import os
@@ -108,7 +116,7 @@ def train_bot_chat(data: Dict[str, str], db: Session = Depends(get_db), current_
             item.answer = new_context
             item.question = "Contexto Generado por Entrenador IA"
         else:
-            item = AITraining(question="Contexto Generado por Entrenador IA", answer=new_context, category="general_context")
+            item = AITraining(question="Contexto Generado por Entrenador IA", answer=new_context, category_id=cat.id)
             db.add(item)
             
         db.commit()

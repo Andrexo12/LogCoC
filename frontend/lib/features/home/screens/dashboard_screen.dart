@@ -72,70 +72,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _header() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'INNOVA CENTER',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3.0,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'LogCoC Experience',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              width: 80,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            )
-          ],
-        ),
-        if (!_isAdmin)
-          IconButton(
-            icon: Icon(Icons.admin_panel_settings, color: Colors.white.withOpacity(0.15)),
-            onPressed: () => _handleAdminPanelTap(context),
-            tooltip: 'Acceso Admin',
+        Text(
+          'INNOVA CENTER',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.5),
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 3.0,
           ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'LogCoC Testing Hub',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Container(
+          width: 80,
+          height: 4,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        )
       ],
     );
   }
 
   Widget _grid(BuildContext context, bool isDesktop) {
-    List<Widget> cards = [];
-
-    if (_isAdmin) {
-      cards.add(
-        _card(
-          context,
-          'Escanear QR',
-          'Consulta detalles del producto instantáneamente',
-          Icons.qr_code_scanner_rounded,
-          AppColors.secondary,
-          () => Navigator.pushNamed(context, '/qr-scanner'),
-        ),
-      );
-    }
-
-    cards.addAll([
+    List<Widget> cards = [
+      _card(
+        context,
+        'Escanear QR',
+        'Consulta detalles del producto instantáneamente',
+        Icons.qr_code_scanner_rounded,
+        AppColors.secondary,
+        () => Navigator.pushNamed(context, '/qr-scanner'),
+      ),
       _card(
         context,
         'Catálogo',
@@ -152,25 +133,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Colors.pinkAccent,
         () => Navigator.pushNamed(context, '/chatbot'),
       ),
-    ]);
-
-    if (_isAdmin) {
-      cards.add(
-        _card(
-          context,
-          'Panel Admin',
-          'Gestionar productos, stock y campañas',
-          Icons.admin_panel_settings_outlined,
-          AppColors.primary,
-          () => _handleAdminPanelTap(context),
-        ),
-      );
-    }
+      _card(
+        context,
+        'Panel Admin',
+        'Gestionar productos, stock y campañas',
+        Icons.admin_panel_settings_outlined,
+        AppColors.primary,
+        () => _handleAdminPanelTap(context),
+      ),
+    ];
 
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: isDesktop ? (_isAdmin ? 4 : 2) : 2,
+      crossAxisCount: isDesktop ? 4 : 2,
       crossAxisSpacing: 20,
       mainAxisSpacing: 20,
       childAspectRatio: 1.0,

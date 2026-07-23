@@ -12,9 +12,7 @@ Este documento enumera **todos los archivos y carpetas** dentro del directorio `
 | `.flutter-plugins` | Texto | Lista de plugins de Flutter instalados. |
 | `.flutter-plugins-dependencies` | Texto | Dependencias de los plugins listados. |
 | `.gitignore` | Texto | Patrones que Git debe ignorar (build/, .dart_tool/, .packages, etc.). |
-| `.idea/` | Directorio | Configuración del IDE (Android Studio/IntelliJ). |
 | `.metadata` | Texto | Metadatos del proyecto Flutter (versión SDK, etc.). |
-| `README.md` | Markdown | Descripción breve del frontend y pasos de ejecución. |
 | `analysis_options.yaml` | YAML | Reglas de análisis estático (lint) para Dart. |
 | `android/` | Directorio | Código nativo Android (Gradle, manifest, etc.). |
 | `ios/` | Directorio | Código nativo iOS (Xcode project, pods, etc.). |
@@ -22,9 +20,7 @@ Este documento enumera **todos los archivos y carpetas** dentro del directorio `
 | `pubspec.yaml` | YAML | Declaración de dependencias Dart/Flutter, assets, fonts. |
 | `pubspec.lock` | Lockfile | Versiones exactas de paquetes instalados. |
 | `build/` | Directorio | Salida de compilación (generada por `flutter build`). |
-| `frontend.iml` | XML | Configuración del módulo IntelliJ. |
-| `frontend_log.txt` | Texto | Log de ejecución del `flutter run`.
-| `spa_server.py` | Python | Servidor sencillo para servir la aplicación web en modo *Single Page Application* durante desarrollo.
+| `spa_server.py` | Python | Servidor sencillo para servir la aplicación web en modo *Single Page Application* durante desarrollo. |
 | `test/` | Directorio | Tests unitarios y de widget para la aplicación Flutter. |
 | `web/` | Directorio | Código y assets para la versión web (index.html, icons, etc.). |
 
